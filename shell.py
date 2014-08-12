@@ -70,29 +70,18 @@ class Shell(cmd.Cmd):
     def __init__(self, **kwargs):
         (self.term_height, self.term_width) = term_size()
         cmd.Cmd.__init__(self, **kwargs)
-        if sdcard_present():
-            self.cur_dir = '1:/'
-        else:
-            self.cur_dir = '0:/'
+        
+        self.cur_dir = os.getcwd()
         self.set_prompt()
 
     def set_prompt(self):
         self.prompt = self.cur_dir + '> '
 
     def mode(self, filename):
-        if len(filename) == 3 and filename[1:3] == ':/':
-            # This looks like a root directory. os.stat doesn't work on the
-            # root directories, so we use os.listdir to see if it exists
-            try:
-                os.listdir(filename)
-                return 0x4000
-            except OSError:
-                return 0
         try:
-            mode = os.stat(filename)[0]
+            return os.stat(filename)[0]
         except OSError:
             return 0
-        return mode
 
     def mode_exists(self, mode):
         return mode & 0xc000 != 0
@@ -104,16 +93,12 @@ class Shell(cmd.Cmd):
         return mode & 0x8000 != 0
 
     def resolve_path(self, path):
-        if path[1:3] != ':/':
-            if path[0] == '/':
-                # a path relative to the root
-                path = self.cur_dir.split('/')[0] + path
+        if path[0] != '/':
+            # Relative path
+            if self.cur_dir[-1] == '/':
+                path = self.cur_dir + path
             else:
-                # Assume its a relative path
-                if self.cur_dir[-1] == '/':
-                    path = self.cur_dir + path
-                else:
-                    path = self.cur_dir + '/' + path
+                path = self.cur_dir + '/' + path
         comps = path.split('/')
         new_comps = []
         for comp in comps:
@@ -212,19 +197,20 @@ class Shell(cmd.Cmd):
                 sys.stdout.write(dirname)
                 sys.stdout.write('\n')
                 continue
-            dir_len = len(dirname)
-            if dirname[-1] != '/':
-                dir_len += 1
             files = []
             if len(args) > 1:
                 if idx > 0:
                     self.stdout.write('\n')
                 self.stdout.write("%s:\n" % dirname)
             for filename in os.listdir(dirname):
-                mode = self.mode(filename)
+                if dirname[-1] == '/':
+                    full_filename = dirname + filename
+                else:
+                    full_filename = dirname + '/' + filename
+                mode = self.mode(full_filename)
                 if self.mode_isdir(mode):
                     filename += '/'
-                files.append(filename[dir_len:])
+                files.append(filename)
             if len(files) > 0:
                 print_cols(sorted(files), self.term_width)
 
