@@ -142,6 +142,16 @@ class Shell(cmd.Cmd):
 
     def do_cat(self, line):
         args = self.line_to_args(line)
+        target = None
+        if '>' in args:
+            target = args[-1]
+            target = self.resolve_path(target)
+            mode = self.mode(target)
+            if not self.mode_exists(mode):
+                sys.stdout.write("Cannot access '%s': No such file\n" % target)
+            if not self.mode_isfile(mode):
+                sys.stdout.write("'%s': is not a file\n" % target)
+            args = args[:-2]
         for filename in args:
             filename = self.resolve_path(filename)
             mode = self.mode(filename)
@@ -151,16 +161,26 @@ class Shell(cmd.Cmd):
             if not self.mode_isfile(mode):
                 sys.stdout.write("'%s': is not a file\n" % filename)
                 continue
-            with open(filename,  'r') as txtfile:
-                for line in txtfile:
-                    print(line, end='')
+            if target is None:
+                with open(filename,  'r') as txtfile:
+                    for line in txtfile:
+                        print(line, end='')
+                        print('')
+            else:
+                with open(filename, 'r') as txtfile:
+                    with open(target, 'a') as outfile:
+                        for line in txtfile:
+                            outfile.write(line)
 
     def help_cd(self):
         self.stdout.write('Changes the current directory\n')
 
     def do_cd(self, line):
         args = self.line_to_args(line)
-        dirname = self.resolve_path(args[0])
+        try:
+            dirname = self.resolve_path(args[0])
+        except IndexError:
+            dirname = '/'
         mode = self.mode(dirname)
         if self.mode_isdir(mode):
             self.cur_dir = dirname
@@ -171,7 +191,27 @@ class Shell(cmd.Cmd):
         self.stdout.write('Display a line of text.\n')
 
     def do_echo(self, line):
-        print(line)
+        args = self.line_to_args(line)
+        target = None
+        if '>' in args:
+            target = args[-1]
+            target = self.resolve_path(target)
+            mode = self.mode(target)
+            if not self.mode_exists(mode):
+                sys.stdout.write("Cannot access '%s': No such file\n" % target)
+            if not self.mode_isfile(mode):
+                sys.stdout.write("'%s': is not a file\n" % target)
+            args = args[:-2]
+        if target is None:
+            for word in args:
+                print(word, end=' ')
+            print('')
+        else:
+            with open(target, 'a') as outfile:
+                for word in args:
+                    word = word + ' '
+                    outfile.write(word)
+                outfile.write('\n')
 
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
@@ -181,12 +221,18 @@ class Shell(cmd.Cmd):
         cmd.Cmd.do_help(self, line)
 
     def help_ls(self):
-        self.stdout.write('List directory contents.\n')
+        self.stdout.write('List directory contents.\nUse ls -a to show hidden files')
 
     def do_ls(self, line):
-        args = self.line_to_args(line)
-        if len(args) == 0:
-            args = ['.']
+        args = ['.']
+        line_args = self.line_to_args(line)
+        for arg in line_args:
+            args.append(arg)
+        show_invisible = False
+        if len(args) > 1:
+            if args[1] == '-a':
+                show_invisible = True
+                args = args[0:1]+args[2:]
         for idx in range(len(args)):
             dirname = self.resolve_path(args[idx])
             mode = self.mode(dirname)
@@ -198,6 +244,7 @@ class Shell(cmd.Cmd):
                 sys.stdout.write('\n')
                 continue
             files = []
+            vfiles = []
             if len(args) > 1:
                 if idx > 0:
                     self.stdout.write('\n')
@@ -211,12 +258,56 @@ class Shell(cmd.Cmd):
                 if self.mode_isdir(mode):
                     filename += '/'
                 files.append(filename)
-            if len(files) > 0:
+                if (filename[0]!='.') and (filename[-1]!='~'):
+                    vfiles.append(filename)
+            if (len(files) > 0) and show_invisible:
                 print_cols(sorted(files), self.term_width)
+            if (len(vfiles) > 0) and not show_invisible:
+                print_cols(sorted(vfiles), self.term_width)
 
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
                           'help with "help cmd".\n')
+    
+    def help_micropython(self):
+        self.stdout.write('Micropython! Call any scripts! Interactive mode! ' +
+                          'Quit with exit()')
+
+    def do_micropython(self, line):
+        args = self.line_to_args(line)
+        source = None
+        if len(args) == 1:
+            source = args[-1]
+            source = self.resolve_path(source)
+            mode = self.mode(source)
+            if not self.mode_exists(mode):
+                sys.stdout.write("Cannot access '%s': No such file\n" % source)
+                return
+            if not self.mode_isfile(mode):
+                sys.stdout.write("'%s': is not a file\n" % source)
+                return
+        if source is None:
+            print('[Micropython]')
+            while True:
+                code_str = '' 
+                line = input('|>>> ')
+                if line[0:4] == 'exit':
+                    break
+                code_str += '%s\n' % line
+                if line[-1] == ':':
+                    while True:                   
+                        line = input('|... ')
+                        if line == '':
+                            break
+                        code_str += '%s\n' % line
+                exec(code_str)
+        else:
+            name = args[0][0:-3]
+            code_str = '#test\n'
+            with open(source, 'r') as code:
+                for line in code:
+                    code_str = code_str + line + '\n'
+            exec(code_str)
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
