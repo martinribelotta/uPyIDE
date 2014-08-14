@@ -162,7 +162,7 @@ class Shell(cmd.Cmd):
                 sys.stdout.write("'%s': is not a file\n" % filename)
                 continue
             if target is None:
-                with open(filename,  'r') as txtfile:
+                with open(filename, 'r') as txtfile:
                     for line in txtfile:
                         print(line, end='')
                         print('')
@@ -266,10 +266,6 @@ class Shell(cmd.Cmd):
             if (len(vfiles) > 0) and not show_invisible:
                 print_cols(sorted(vfiles), self.term_width)
 
-    def help_help(self):
-        self.stdout.write('List available commands with "help" or detailed ' +
-                          'help with "help cmd".\n')
-
     def help_micropython(self):
         self.stdout.write('Micropython! Call any scripts! Interactive mode! ' +
                           'Quit with exit()')
@@ -303,8 +299,7 @@ class Shell(cmd.Cmd):
                         code_str += '%s\n' % line
                 exec(code_str)
         else:
-            name = args[0][0:-3]
-            code_str = '#test\n'
+            code_str = ''
             with open(source, 'r') as code:
                 for line in code:
                     code_str = code_str + line + '\n'
