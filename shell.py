@@ -265,6 +265,45 @@ class Shell(cmd.Cmd):
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
                           'help with "help cmd".\n')
+    
+    def help_micropython(self):
+        print('Micropython!')
+
+    def do_micropython(self, line):
+        args = self.line_to_args(line)
+        source = None
+        if len(args) == 1:
+            source = args[-1]
+            source = self.resolve_path(source)
+            mode = self.mode(source)
+            if not self.mode_exists(mode):
+                sys.stdout.write("Cannot access '%s': No such file\n" % source)
+                return
+            if not self.mode_isfile(mode):
+                sys.stdout.write("'%s': is not a file\n" % source)
+                return
+        if source is None:
+            print('[Micropython]')
+            while True:
+                code_str = '' 
+                line = input('|>>> ')
+                if line[0:4] == 'exit':
+                    break
+                code_str += '%s\n' % line
+                if line[-1] == ':':
+                    while True:                   
+                        line = input('|... ')
+                        if line == '':
+                            break
+                        code_str += '%s\n' % line
+                exec(code_str)
+        else:
+            name = args[0][0:-3]
+            code_str = '#test\n'
+            with open(source, 'r') as code:
+                for line in code:
+                    code_str = code_str + line + '\n'
+            exec(code_str)
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
