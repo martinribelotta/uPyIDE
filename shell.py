@@ -160,7 +160,10 @@ class Shell(cmd.Cmd):
 
     def do_cd(self, line):
         args = self.line_to_args(line)
-        dirname = self.resolve_path(args[0])
+        try:
+            dirname = self.resolve_path(args[0])
+        except IndexError:
+            dirname = '/'
         mode = self.mode(dirname)
         if self.mode_isdir(mode):
             self.cur_dir = dirname
