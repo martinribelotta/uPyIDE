@@ -191,7 +191,27 @@ class Shell(cmd.Cmd):
         self.stdout.write('Display a line of text.\n')
 
     def do_echo(self, line):
-        print(line)
+        args = self.line_to_args(line)
+        target = None
+        if '>' in args:
+            target = args[-1]
+            target = self.resolve_path(target)
+            mode = self.mode(target)
+            if not self.mode_exists(mode):
+                sys.stdout.write("Cannot access '%s': No such file\n" % target)
+            if not self.mode_isfile(mode):
+                sys.stdout.write("'%s': is not a file\n" % target)
+            args = args[:-2]
+        if target is None:
+            for word in args:
+                print(word, end=' ')
+            print('')
+        else:
+            with open(target, 'a') as outfile:
+                for word in args:
+                    word = word + ' '
+                    outfile.write(word)
+                outfile.write('\n')
 
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
