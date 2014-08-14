@@ -142,6 +142,16 @@ class Shell(cmd.Cmd):
 
     def do_cat(self, line):
         args = self.line_to_args(line)
+        target = None
+        if '>' in args:
+            target = args[-1]
+            target = self.resolve_path(target)
+            mode = self.mode(target)
+            if not self.mode_exists(mode):
+                sys.stdout.write("Cannot access '%s': No such file\n" % target)
+            if not self.mode_isfile(mode):
+                sys.stdout.write("'%s': is not a file\n" % target)
+            args = args[:-2]
         for filename in args:
             filename = self.resolve_path(filename)
             mode = self.mode(filename)
@@ -151,9 +161,16 @@ class Shell(cmd.Cmd):
             if not self.mode_isfile(mode):
                 sys.stdout.write("'%s': is not a file\n" % filename)
                 continue
-            with open(filename,  'r') as txtfile:
-                for line in txtfile:
-                    print(line, end='')
+            if target is None:
+                with open(filename,  'r') as txtfile:
+                    for line in txtfile:
+                        print(line, end='')
+                        print('')
+            else:
+                with open(filename, 'r') as txtfile:
+                    with open(target, 'a') as outfile:
+                        for line in txtfile:
+                            outfile.write(line)
 
     def help_cd(self):
         self.stdout.write('Changes the current directory\n')
