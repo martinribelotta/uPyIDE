@@ -1,6 +1,6 @@
 """Implement a simple shell for running on MicroPython."""
 
-#from __future__ import print_function
+# from __future__ import print_function
 
 import os
 import sys
@@ -25,7 +25,7 @@ def term_size():
     # ESC [row;colH - Move to cursor position
     # ESC [6n       - Device Status Report - send ESC [row;colR
     sys.stdout.write('\x1b7\x1b[r\x1b[999;999H\x1b[6n')
-    #sys.stdout.flush()
+    # sys.stdout.flush()
     pos = ''
     while True:
         char = sys.stdin.read(1)
@@ -35,10 +35,10 @@ def term_size():
             pos += char
     (height, width) = [int(i) for i in pos.split(';')]
     sys.stdout.write('\x1b8')
-    #sys.stdout.flush()
+    # sys.stdout.flush()
     return height, width
 
-#def term_size():
+# def term_size():
 #    return (25, 80)
 
 
@@ -70,7 +70,7 @@ class Shell(cmd.Cmd):
     def __init__(self, **kwargs):
         (self.term_height, self.term_width) = term_size()
         cmd.Cmd.__init__(self, **kwargs)
-        
+
         self.cur_dir = os.getcwd()
         self.set_prompt()
 
@@ -221,7 +221,8 @@ class Shell(cmd.Cmd):
         cmd.Cmd.do_help(self, line)
 
     def help_ls(self):
-        self.stdout.write('List directory contents.\nUse ls -a to show hidden files')
+        self.stdout.write('List directory contents.\n' +
+                          'Use ls -a to show hidden files')
 
     def do_ls(self, line):
         args = ['.']
@@ -258,7 +259,7 @@ class Shell(cmd.Cmd):
                 if self.mode_isdir(mode):
                     filename += '/'
                 files.append(filename)
-                if (filename[0]!='.') and (filename[-1]!='~'):
+                if (filename[0] != '.') and (filename[-1] != '~'):
                     vfiles.append(filename)
             if (len(files) > 0) and show_invisible:
                 print_cols(sorted(files), self.term_width)
@@ -268,7 +269,7 @@ class Shell(cmd.Cmd):
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
                           'help with "help cmd".\n')
-    
+
     def help_micropython(self):
         self.stdout.write('Micropython! Call any scripts! Interactive mode! ' +
                           'Quit with exit()')
