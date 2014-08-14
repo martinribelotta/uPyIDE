@@ -184,12 +184,15 @@ class Shell(cmd.Cmd):
         cmd.Cmd.do_help(self, line)
 
     def help_ls(self):
-        self.stdout.write('List directory contents.\n')
+        self.stdout.write('List directory contents.\nUse ls -a to show hidden files')
 
     def do_ls(self, line):
-        args = self.line_to_args(line)
-        if len(args) == 0:
-            args = ['.']
+        args = ['.'].append(self.line_to_args(line))
+        show_invisible = False
+        if len(args) > 1:
+            if args[1] == '-a':
+                show_invisible = True
+                args = args[2:]
         for idx in range(len(args)):
             dirname = self.resolve_path(args[idx])
             mode = self.mode(dirname)
@@ -201,6 +204,7 @@ class Shell(cmd.Cmd):
                 sys.stdout.write('\n')
                 continue
             files = []
+            vfiles = []
             if len(args) > 1:
                 if idx > 0:
                     self.stdout.write('\n')
@@ -214,8 +218,12 @@ class Shell(cmd.Cmd):
                 if self.mode_isdir(mode):
                     filename += '/'
                 files.append(filename)
-            if len(files) > 0:
+                if (filename[0]!='.') and (filename[-1]!='~'):
+                    vfiles.append(filename)
+            if (len(files) > 0) and not show_invisbile:
                 print_cols(sorted(files), self.term_width)
+            if (len(vfiles) > 0) and show_invisbile:
+                print_cols(sorted(vfiles), self.term_width)
 
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
