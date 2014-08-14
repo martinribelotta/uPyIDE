@@ -224,12 +224,15 @@ class Shell(cmd.Cmd):
         self.stdout.write('List directory contents.\nUse ls -a to show hidden files')
 
     def do_ls(self, line):
-        args = ['.'].append(self.line_to_args(line))
+        args = ['.']
+        line_args = self.line_to_args(line)
+        for arg in line_args:
+            args.append(arg)
         show_invisible = False
         if len(args) > 1:
             if args[1] == '-a':
                 show_invisible = True
-                args = args[2:]
+                args = args[0:1]+args[2:]
         for idx in range(len(args)):
             dirname = self.resolve_path(args[idx])
             mode = self.mode(dirname)
@@ -257,9 +260,9 @@ class Shell(cmd.Cmd):
                 files.append(filename)
                 if (filename[0]!='.') and (filename[-1]!='~'):
                     vfiles.append(filename)
-            if (len(files) > 0) and not show_invisbile:
+            if (len(files) > 0) and show_invisible:
                 print_cols(sorted(files), self.term_width)
-            if (len(vfiles) > 0) and show_invisbile:
+            if (len(vfiles) > 0) and not show_invisible:
                 print_cols(sorted(vfiles), self.term_width)
 
     def help_help(self):
