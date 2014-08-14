@@ -270,7 +270,8 @@ class Shell(cmd.Cmd):
                           'help with "help cmd".\n')
     
     def help_micropython(self):
-        print('Micropython!')
+        self.stdout.write('Micropython! Call any scripts! Interactive mode! ' +
+                          'Quit with exit()')
 
     def do_micropython(self, line):
         args = self.line_to_args(line)
