@@ -88,8 +88,7 @@ def print_cols(words, termwidth=79):
 
 def print_long(files):
     """Prints detailed information about each file passed in."""
-    for file in files:
-        stat = get_stat(file)
+se        stat = get_stat(file)
         mode = stat[0]
         if mode_isdir(mode):
             mode_str = '/'
@@ -179,8 +178,8 @@ class Shell(cmd.Cmd):
             target = self.resolve_path(target)
             mode = get_mode(target)
             if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file\n" %
-                                  target)
+                open(target, 'a').close()
+            mode = get_mode(target)
             if not mode_isfile(mode):
                 self.stdout.write("'%s': is not a file\n" % target)
             args = args[:-2]
@@ -230,8 +229,8 @@ class Shell(cmd.Cmd):
             target = self.resolve_path(target)
             mode = get_mode(target)
             if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file\n" %
-                                  target)
+                open(target, 'a').close()
+            mode = get_mode(target)
             if not mode_isfile(mode):
                 self.stdout.write("'%s': is not a file\n" % target)
             args = args[:-2]
@@ -345,6 +344,34 @@ class Shell(cmd.Cmd):
                 for line in code:
                     code_str = code_str + line + '\n'
             exec(code_str)
+
+    def help_mkdir(self):
+        self.stdout.write('Create directory.')
+
+    def do_mkdir(self, line):
+        args = self.line_to_args(line)
+        target = args[0]
+        mode = get_mode(target)
+        if not mode_exists(mode):
+            os.mkdir(target)
+        else:
+            print('%s already exists.' % target)
+
+    def help_rm(self):
+        self.stdout.write('Delete files and directories.')
+
+    def do_rm(self, line):
+        args = self.line_to_args(line)
+        if args[0] in ('pybcdc.inf', 'README.txt', 'boot.py', 'main.py'):
+            print('This file cannot be deleted')
+        try:
+            os.remove(args[0])
+        except:
+            try:
+                os.rmdir(args[0])
+            except:
+                print('%s is not a file or directory.' % args[0])
+        
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
