@@ -88,17 +88,17 @@ def print_cols(words, termwidth=79):
 
 def print_long(files):
     """Prints detailed information about each file passed in."""
-    stat = get_stat(file)
-    mode = stat[0]
-    if mode_isdir(mode):
-        mode_str = '/'
-    else:
-        mode_str = ''
-    size = stat[6]
-    mtime = stat[8]
-    localtime = time.localtime(mtime)
-    print('%6d %s %2d %02d:%02d %s%s' % (size, MONTH[localtime[1]],
-          localtime[2], localtime[4], localtime[5], file, mode_str))
+se        stat = get_stat(file)
+        mode = stat[0]
+        if mode_isdir(mode):
+            mode_str = '/'
+        else:
+            mode_str = ''
+        size = stat[6]
+        mtime = stat[8]
+        localtime = time.localtime(mtime)
+        print('%6d %s %2d %02d:%02d %s%s' % (size, MONTH[localtime[1]],
+              localtime[2], localtime[4], localtime[5], file, mode_str))
 
 
 def sdcard_present():
@@ -371,6 +371,7 @@ class Shell(cmd.Cmd):
                 os.rmdir(args[0])
             except:
                 print('%s is not a file or directory.' % args[0])
+        
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
