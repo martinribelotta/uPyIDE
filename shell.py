@@ -88,7 +88,8 @@ def print_cols(words, termwidth=79):
 
 def print_long(files):
     """Prints detailed information about each file passed in."""
-se        stat = get_stat(file)
+    for file in files:
+        stat = get_stat(file)
         mode = stat[0]
         if mode_isdir(mode):
             mode_str = '/'
@@ -371,7 +372,6 @@ class Shell(cmd.Cmd):
                 os.rmdir(args[0])
             except:
                 print('%s is not a file or directory.' % args[0])
-        
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
