@@ -28,18 +28,21 @@ def term_size():
     # ESC [r        - Enable scrolling for entire display
     # ESC [row;colH - Move to cursor position
     # ESC [6n       - Device Status Report - send ESC [row;colR
-    sys.stdout.write('\x1b7\x1b[r\x1b[999;999H\x1b[6n')
-    # sys.stdout.flush()
-    pos = ''
+    repl= None
+    if 'repl_source' in dir(pyb):
+        repl = pyb.repl_source()
+    if repl is None:
+        repl = pyb.USB_VCP()
+    repl.send(b'\x1b7\x1b[r\x1b[999;999H\x1b[6n')
+    pos = b''
     while True:
-        char = sys.stdin.read(1)
-        if char == 'R':
+        char = repl.recv(1)
+        if char == b'R':
             break
-        if char != '\x1b' and char != '[':
+        if char != b'\x1b' and char != b'[':
             pos += char
-    (height, width) = [int(i) for i in pos.split(';')]
-    sys.stdout.write('\x1b8')
-    # sys.stdout.flush()
+    repl.send(b'\x1b8')
+    (height, width) = [int(i, 10) for i in pos.split(b';')]
     return height, width
 
 # def term_size():
