@@ -117,6 +117,8 @@ class Shell(cmd.Cmd):
         (self.term_height, self.term_width) = term_size()
         cmd.Cmd.__init__(self, **kwargs)
 
+        self.stdout_to_shell = self.stdout
+
         self.cur_dir = os.getcwd()
         self.set_prompt()
 
@@ -151,14 +153,21 @@ class Shell(cmd.Cmd):
         pass
 
     def postcmd(self, stop, line):
+        self.stdout.close()
+        self.stdout = self.stdout_to_shell
         self.set_prompt()
         return stop
 
     def line_to_args(self, line):
         """This will convert the line passed into the do_xxx functions into
-        and array of arguments.
+        an array of arguments and handle the Output Redirection Operator.
         """
-        return line.split()
+        args = line.split()
+        if '>' in args:
+            self.stdout = open(args[-1], 'a')
+            return args[:-2]
+        else:
+            return args
 
     def help_args(self):
         self.stdout.write('Prints out command line arguments.\n')
@@ -173,17 +182,6 @@ class Shell(cmd.Cmd):
 
     def do_cat(self, line):
         args = self.line_to_args(line)
-        target = None
-        if '>' in args:
-            target = args[-1]
-            target = self.resolve_path(target)
-            mode = get_mode(target)
-            if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file\n" %
-                                  target)
-            if not mode_isfile(mode):
-                self.stdout.write("'%s': is not a file\n" % target)
-            args = args[:-2]
         for filename in args:
             filename = self.resolve_path(filename)
             mode = get_mode(filename)
@@ -194,15 +192,9 @@ class Shell(cmd.Cmd):
             if not mode_isfile(mode):
                 self.stdout.write("'%s': is not a file\n" % filename)
                 continue
-            if target is None:
-                with open(filename, 'r') as txtfile:
-                    for line in txtfile:
-                        self.stdout.write(line)
-            else:
-                with open(filename, 'r') as txtfile:
-                    with open(target, 'a') as outfile:
-                        for line in txtfile:
-                            outfile.write(line)
+            with open(filename, 'r') as txtfile:
+                for line in txtfile:
+                    self.stdout.write(line)
 
     def help_cd(self):
         self.stdout.write('Changes the current directory\n')
@@ -224,27 +216,8 @@ class Shell(cmd.Cmd):
 
     def do_echo(self, line):
         args = self.line_to_args(line)
-        target = None
-        if '>' in args:
-            target = args[-1]
-            target = self.resolve_path(target)
-            mode = get_mode(target)
-            if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file\n" %
-                                  target)
-            if not mode_isfile(mode):
-                self.stdout.write("'%s': is not a file\n" % target)
-            args = args[:-2]
-        if target is None:
-            for word in args:
-                print(word, end=' ')
-            print('')
-        else:
-            with open(target, 'a') as outfile:
-                for word in args:
-                    word = word + ' '
-                    outfile.write(word)
-                outfile.write('\n')
+        self.stdout.write(args[0])
+        self.stdout.write('\n')
 
     def help_help(self):
         self.stdout.write('List available commands with "help" or detailed ' +
@@ -345,6 +318,33 @@ class Shell(cmd.Cmd):
                 for line in code:
                     code_str = code_str + line + '\n'
             exec(code_str)
+
+    def help_mkdir(self):
+        self.stdout.write('Create directory.')
+
+    def do_mkdir(self, line):
+        args = self.line_to_args(line)
+        target = args[0]
+        mode = get_mode(target)
+        if not mode_exists(mode):
+            os.mkdir(target)
+        else:
+            print('%s already exists.' % target)
+
+    def help_rm(self):
+        self.stdout.write('Delete files and directories.')
+
+    def do_rm(self, line):
+        args = self.line_to_args(line)
+        if args[0] in ('pybcdc.inf', 'README.txt', 'boot.py', 'main.py'):
+            print('This file cannot be deleted')
+        try:
+            os.remove(args[0])
+        except:
+            try:
+                os.rmdir(args[0])
+            except:
+                print('%s is not a file or directory.' % args[0])
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
