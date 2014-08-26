@@ -159,6 +159,9 @@ class Shell(cmd.Cmd):
         return stop
 
     def line_to_args(self, line):
+        """This will convert the line passed into the do_xxx functions into
+        an array of arguments and handle the Output Redirection Operator.
+        """
         args = line.split()
         if '>' in args:
             self.stdout = open(args[-1], 'a')
