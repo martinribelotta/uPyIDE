@@ -5,7 +5,7 @@ MicroPython shell
 
 This is a very simple command line based shell for MicroPython.
 It is based on a stripped down version of cmd, which can be found
-here: https://github.com/micropython/micropython-lib/pull/4
+here: https://github.com/micropython/micropython-lib/tree/master/cmd
 
 I use it by copying cmd.py an shell.py to my sdcard.
 Then you can do:
