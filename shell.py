@@ -166,11 +166,13 @@ class Shell(cmd.Cmd):
         an array of arguments and handle the Output Redirection Operator.
         """
         args = line.split()
-        if '>' in args:
+        if '>>' in args:
             self.stdout = open(args[-1], 'a')
             return args[:-2]
-        else:
-            return args
+        if '>' in args:
+            self.stdout = open(args[-1], 'w')
+            return args[:-2]
+        return args
 
     def help_args(self):
         self.stdout.write('Prints out command line arguments.\n')
@@ -219,7 +221,7 @@ class Shell(cmd.Cmd):
 
     def do_echo(self, line):
         args = self.line_to_args(line)
-        self.stdout.write(args[0])
+        self.stdout.write(' '.join(args))
         self.stdout.write('\n')
 
     def help_help(self):
