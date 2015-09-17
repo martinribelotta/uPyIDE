@@ -113,6 +113,58 @@ def sdcard_present():
     return pyb.Pin.board.SD.value() == 0
 
 
+def split_line(line):
+    """Splits a line up into individual arguments in a fashion similar to
+       string.split(), but allowing for embedded spaces by using quotes.
+    """
+    arg = None
+    args = []
+    quote_char = None
+    escape = False
+    for ch in line:
+        if escape:
+            if ch == 'b':
+                ch = '\b'
+            elif ch == 'n':
+                ch = '\n'
+            elif ch == 'r':
+                ch = '\r'
+            elif ch == 't':
+                ch = '\t'
+            elif ch == '"' or ch == "'" or ch == '\\' or ch == ' ':
+                pass
+            elif ch == 'r':
+                ch = '\r'
+            else:
+                ch = '\\' + ch
+            escape = False
+        else:
+            if ch == '\\':
+                escape = True
+                continue
+            if ch == quote_char:
+                quote_char = None
+                continue
+            if quote_char is None:
+                if (ch == "'" or ch == '"'):
+                    quote_char = ch
+                    if arg is None:
+                        # This allows empty quotes to create an empty argument
+                        arg = ''
+                    continue
+                if  ch.isspace():
+                    if arg is not None:
+                        args.append(arg)
+                        arg = None
+                    continue
+        if arg is None:
+            arg = ''
+        arg += ch
+    if arg is not None:
+        args.append(arg)
+    return args
+
+
 class Shell(cmd.Cmd):
     """Implements the shell as a command line interpreter."""
 
@@ -165,7 +217,7 @@ class Shell(cmd.Cmd):
         """This will convert the line passed into the do_xxx functions into
         an array of arguments and handle the Output Redirection Operator.
         """
-        args = line.split()
+        args = split_line(line)
         if '>>' in args:
             self.stdout = open(args[-1], 'a')
             return args[:-2]
@@ -350,6 +402,12 @@ class Shell(cmd.Cmd):
                 os.rmdir(args[0])
             except:
                 print('%s is not a file or directory.' % args[0])
+
+    def help_soft_reset(self):
+        self.stdout.write('Issue Soft Reset.')
+
+    def do_soft_reset(self, line):
+        raise SystemExit
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
