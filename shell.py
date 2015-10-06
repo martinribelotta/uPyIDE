@@ -17,7 +17,7 @@ import time
 
 MONTH = ('', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
-
+WEEKDAY = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
 
 def term_size():
     """Print out a sequence of ANSI escape code which will report back the
@@ -75,7 +75,7 @@ def mode_isfile(mode):
     return mode & 0x8000 != 0
 
 
-def print_cols(words, termwidth=79):
+def print_cols(words, termwidth=79, file=None):
     """Takes a single column of words, and prints it as multiple columns that
     will fit in termwidth columns.
     """
@@ -86,13 +86,14 @@ def print_cols(words, termwidth=79):
     for row in range(nrows):
         for i in range(row, nwords, nrows):
             print('%-*s' % (width, words[i]),
-                  end='\n' if i + nrows >= nwords else ' ')
+                  end='\n' if i + nrows >= nwords else ' ',
+                  file=file)
 
 
-def print_long(files):
+def print_long(filenames, file=None):
     """Prints detailed information about each file passed in."""
-    for file in files:
-        stat = get_stat(file)
+    for filename in filenames:
+        stat = get_stat(filename)
         mode = stat[0]
         if mode_isdir(mode):
             mode_str = '/'
@@ -102,7 +103,8 @@ def print_long(files):
         mtime = stat[8]
         localtime = time.localtime(mtime)
         print('%6d %s %2d %02d:%02d %s%s' % (size, MONTH[localtime[1]],
-              localtime[2], localtime[4], localtime[5], file, mode_str))
+              localtime[2], localtime[4], localtime[5], filename, mode_str),
+              file=file)
 
 
 def sdcard_present():
@@ -164,6 +166,16 @@ def split_line(line):
         args.append(arg)
     return args
 
+def ctime(t):
+    """Formats the date/time in a format similar to the date command line
+       program under linux, which is: Tue Oct  6 16:26:49 PDT 2015. We don't
+       know the timezone, so we drop that portion.
+       Like ctime, this function also returns a trailing newline.
+    """
+    (year, month, day, hours, minutes, seconds, weekday, yearday) = time.localtime(t)
+    return '{} {} {:2} {:02}:{:02}:{:02} {:4}\n'.format(
+        WEEKDAY[weekday], MONTH[month], day, hours, minutes, seconds, year)
+
 
 class Shell(cmd.Cmd):
     """Implements the shell as a command line interpreter."""
@@ -173,6 +185,7 @@ class Shell(cmd.Cmd):
         cmd.Cmd.__init__(self, **kwargs)
 
         self.stdout_to_shell = self.stdout
+        self.stderr = self.stdout
 
         self.cur_dir = os.getcwd()
         self.set_prompt()
@@ -232,7 +245,7 @@ class Shell(cmd.Cmd):
     def do_args(self, line):
         args = self.line_to_args(line)
         for idx in range(len(args)):
-            print("arg[%d] = '%s'" % (idx, args[idx]))
+            self.stdout.write("arg[%d] = '%s'" % (idx, args[idx]))
 
     def help_cat(self):
         self.stdout.write('Concatinate files and send to stdout.\n')
@@ -243,11 +256,11 @@ class Shell(cmd.Cmd):
             filename = self.resolve_path(filename)
             mode = get_mode(filename)
             if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file\n" %
+                self.stderr.write("Cannot access '%s': No such file\n" %
                                   filename)
                 continue
             if not mode_isfile(mode):
-                self.stdout.write("'%s': is not a file\n" % filename)
+                self.stderr.write("'%s': is not a file\n" % filename)
                 continue
             with open(filename, 'r') as txtfile:
                 for line in txtfile:
@@ -266,7 +279,7 @@ class Shell(cmd.Cmd):
         if mode_isdir(mode):
             self.cur_dir = dirname
         else:
-            self.stdout.write("Directory '%s' does not exist\n" % dirname)
+            self.stderr.write("Directory '%s' does not exist\n" % dirname)
 
     def help_echo(self):
         self.stdout.write('Display a line of text.\n')
@@ -285,7 +298,7 @@ class Shell(cmd.Cmd):
 
     def help_ls(self):
         self.stdout.write('List directory contents.\n' +
-                          'Use ls -a to show hidden files')
+                          'Use ls -a to show hidden files\n')
 
     def do_ls(self, line):
         args = self.line_to_args(line)
@@ -297,7 +310,7 @@ class Shell(cmd.Cmd):
             elif args[0] == '-l':
                 show_long = True
             else:
-                self.stdout.write("Unrecognized option '%s'" % args[0])
+                self.stderr.write("Unrecognized option '%s'" % args[0])
                 return
             args.remove(args[0])
         if len(args) == 0:
@@ -306,7 +319,7 @@ class Shell(cmd.Cmd):
             dirname = self.resolve_path(args[idx])
             mode = get_mode(dirname)
             if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file or "
+                self.stderr.write("Cannot access '%s': No such file or "
                                   "directory\n" % dirname)
                 continue
             if not mode_isdir(mode):
@@ -332,13 +345,13 @@ class Shell(cmd.Cmd):
                     files.append(filename)
             if (len(files) > 0):
                 if show_long:
-                    print_long(sorted(files))
+                    print_long(sorted(files), file=self.stdout)
                 else:
-                    print_cols(sorted(files), self.term_width)
+                    print_cols(sorted(files), self.term_width, file=self.stdout)
 
     def help_micropython(self):
         self.stdout.write('Micropython! Call any scripts! Interactive mode! ' +
-                          'Quit with exit()')
+                          'Quit with exit()\n')
 
     def do_micropython(self, line):
         args = self.line_to_args(line)
@@ -348,14 +361,14 @@ class Shell(cmd.Cmd):
             source = self.resolve_path(source)
             mode = get_mode(source)
             if not mode_exists(mode):
-                self.stdout.write("Cannot access '%s': No such file\n" %
+                self.stderr.write("Cannot access '%s': No such file\n" %
                                   source)
                 return
             if not mode_isfile(mode):
-                self.stdout.write("'%s': is not a file\n" % source)
+                self.stderr.write("'%s': is not a file\n" % source)
                 return
         if source is None:
-            print('[Micropython]')
+            self.stdout.write('[Micropython]\n')
             while True:
                 code_str = ''
                 line = input('|>>> ')
@@ -377,7 +390,7 @@ class Shell(cmd.Cmd):
             exec(code_str)
 
     def help_mkdir(self):
-        self.stdout.write('Create directory.')
+        self.stdout.write('Create directory.\n')
 
     def do_mkdir(self, line):
         args = self.line_to_args(line)
@@ -386,28 +399,56 @@ class Shell(cmd.Cmd):
         if not mode_exists(mode):
             os.mkdir(target)
         else:
-            print('%s already exists.' % target)
+            self.stderr.write('%s already exists.' % target)
 
     def help_rm(self):
-        self.stdout.write('Delete files and directories.')
+        self.stdout.write('Delete files and directories.\n')
 
     def do_rm(self, line):
         args = self.line_to_args(line)
-        if args[0] in ('pybcdc.inf', 'README.txt', 'boot.py', 'main.py'):
-            print('This file cannot be deleted')
         try:
             os.remove(args[0])
         except:
             try:
                 os.rmdir(args[0])
             except:
-                print('%s is not a file or directory.' % args[0])
+                self.stderr.write('%s is not a file or directory.\n' % args[0])
 
     def help_soft_reset(self):
-        self.stdout.write('Issue Soft Reset.')
+        self.stdout.write('Issue Soft Reset.\n')
 
     def do_soft_reset(self, line):
         raise SystemExit
+
+    def help_get_time(self):
+        self.stdout.write('Prints the current time in the format: Www Mmm DD HH:MM:SS YYYY\n')
+
+    def do_get_time(self, line):
+        self.stdout.write(ctime(time.time()))
+
+    def help_set_time(self):
+        self.stdout.write('Sets the RTC time.\n' +
+                          'set_time YYYY MM DD HH MM SS\n')
+
+    def do_set_time(self, line):
+        args = split_line(line)
+        if (len(args) != 6):
+            self.stderr.write('Expecting 6 arguments in the order: YYYY MM DD HH MM SS\n')
+            return
+        try:
+            (year, month, day, hours, minutes, seconds) = [int(arg) for arg in args]
+        except:
+            self.stderr.write("Expecting numeric arguments\n")
+            return
+        # Run the date through mktime and back through localtime so that we
+        # get a normalized date and time, and calculate the weekday
+        t = time.mktime((year, month, day, hours, minutes, seconds, 0, 0, -1))
+        (year, month, day, hours, minutes, seconds, weekday, yearday) = time.localtime(t)
+        rtc = pyb.RTC()
+        # localtime weekday is 0-6, Monday is 0
+        # RTC weekday is 1-7, Monday is 1
+        rtc.datetime((year, month, day, weekday + 1, hours, minutes, seconds, 0))
+        self.stdout.write(ctime(time.time()))
 
     def help_EOF(self):
         self.stdout.write('Control-D to quit.\n')
@@ -415,7 +456,7 @@ class Shell(cmd.Cmd):
     def do_EOF(self, _):
         # The prompt will have been printed, so print a newline so that the
         # REPL prompt shows up properly.
-        print('')
+        self.stdout.write('\n')
         return True
 
 
