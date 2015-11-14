@@ -174,6 +174,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def openTerm(self):
         if self.termAction.isChecked():
             self.stack.setCurrentIndex(1)
+            self.term.setFocus()
         else:
             self.stack.setCurrentIndex(0)
 
