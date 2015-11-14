@@ -8,7 +8,7 @@ from pyqode.qt import QtWidgets, QtCore
 
 import serial
 import threading
-import vt102
+import pyte
 
 class Terminal(QtWidgets.QTextEdit):
     '''
@@ -23,14 +23,15 @@ class Terminal(QtWidgets.QTextEdit):
         '''
         super(self.__class__, self).__init__(parent)
         self.setFont(QtWidgets.QFont('Monospace', 10))
+        #self.setCursorWidth(0)
         self.setCursorWidth(QtWidgets.QFontMetrics(self.font()).width(' '))
-        self.setStyleSheet("QTextEdit { background-color : black; color : #cccccc; }");
+        self.setStyleSheet("background-color : black; color : #cccccc;");
         self.onReceiveText.connect(self._appendText)
         self.serial = None
         self.thread = None
-        self.stream = vt102.stream()
-        self.vt = vt102.screen((24, 80))
-        self.vt.attach(self.stream)
+        self.stream = pyte.Stream()
+        self.vt = pyte.Screen(80, 24)
+        self.stream.attach(self.vt)
         
     def open(self, port, speed):
         if self.serial is serial.Serial:
@@ -56,20 +57,28 @@ class Terminal(QtWidgets.QTextEdit):
                 n = self.serial.inWaiting()
                 if n:
                     text = text + self.serial.read(n)
-                self.onReceiveText.emit(text.decode('utf-8'))
+                self.onReceiveText.emit(text.decode(errors='ignore'))
         
     def paintEvent(self, event):
-        self.setPlainText('\n'.join(self.vt.display))
         super().paintEvent(event)
         p = QtWidgets.QPainter()
         p.begin(self.viewport())
-        self.moveCursorTo(self.vt.cursor())
+        self.moveCursorTo(self.vt.cursor)
         p.fillRect(self.cursorRect(), QtWidgets.QBrush(QtCore.Qt.white))
         p.end()
         
+    def virtualCursorRect(self):
+        textSize = QtWidgets.QFontMetrics(self.font()).size(0, ' ')
+        r = QtCore.QRect(QtCore.QPoint(), textSize)
+        textCursor = self.vt.cursor()
+        r.moveTopLeft(QtCore.QPoint(0,0) + 
+                      QtCore.QPoint(textCursor[0]*r.width(),
+                                    textCursor[1]*r.height()))
+        return r
+    
     def moveCursorTo(self, pos):
-        line = pos[1]
-        col = pos[0]
+        line = pos.y
+        col = pos.x
         c = self.textCursor()
         c.setPosition(0, c.MoveAnchor)
         c.movePosition(c.Down, c.MoveAnchor, line+1);
@@ -78,16 +87,20 @@ class Terminal(QtWidgets.QTextEdit):
         
     @QtCore.Slot(str)
     def _appendText(self, text):
-        self.stream.process(text)
+        self.stream.feed(text)
+        self.setPlainText('\n'.join(self.vt.display))
     
     def keyPressEvent(self, event):
         if self.serial and self.serial.isOpen():
             try:
                 text = {
                     QtCore.Qt.Key_Tab: lambda x: b"\t",
-                    QtCore.Qt.Key_Backspace: lambda x: b"\x7f"
+                    QtCore.Qt.Key_Backspace: lambda x: b"\x7f",
+                    QtCore.Qt.Key_Up: lambda x: b"\033[A",
+                    QtCore.Qt.Key_Down: lambda x: b"\033[B",
+                    QtCore.Qt.Key_Left: lambda x: b"\033[D",
+                    QtCore.Qt.Key_Right: lambda x: b"\033[C",
                 }[event.key()](event.key())
-                print(text)
             except KeyError:
                 text = bytes(event.text(), 'utf-8')
             if text:
