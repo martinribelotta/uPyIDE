@@ -14,9 +14,7 @@ class Terminal(QtWidgets.QWidget):
     '''
     classdocs
     '''
-    
-    onReceiveText = QtCore.Signal(str)
-     
+         
     def __init__(self, parent):
         '''
         Constructor
@@ -25,7 +23,6 @@ class Terminal(QtWidgets.QWidget):
         self.setFont(QtWidgets.QFont('Monospace', 10))
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.setStyleSheet("background-color : black; color : #cccccc;");
-        self.onReceiveText.connect(self._appendText)
         self.serial = None
         self.thread = None
         self.stream = pyte.Stream()
@@ -37,11 +34,15 @@ class Terminal(QtWidgets.QWidget):
         lines = int(event.size().height() / charSize.height())
         columns = int(event.size().width() / charSize.width())
         self.vt.resize(lines, columns)
+        self.vt.reset()
         
     def focusNextPrevChild(self, n):
         return False
         
     def open(self, port, speed):
+        '''
+            Open serial 'port' as speed 'speed'
+        '''
         if self.serial is serial.Serial:
             self.serial.close()
         try:
@@ -65,7 +66,8 @@ class Terminal(QtWidgets.QWidget):
                 n = self.serial.inWaiting()
                 if n:
                     text = text + self.serial.read(n)
-                self.onReceiveText.emit(text.decode(errors='ignore'))
+                self.stream.feed(text.decode(errors='ignore'))
+                self.update()
         
     def paintEvent(self, event):
         p = QtWidgets.QPainter()
@@ -92,11 +94,6 @@ class Terminal(QtWidgets.QWidget):
                       QtCore.QPoint(self.vt.cursor.x * r.width(),
                                     self.vt.cursor.y * r.height()))
         return r
-    
-    @QtCore.Slot(str)
-    def _appendText(self, text):
-        self.stream.feed(text)
-        self.update()
     
     def keyPressEvent(self, event):
         if self.serial and self.serial.isOpen():
