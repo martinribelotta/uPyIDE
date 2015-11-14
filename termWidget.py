@@ -10,7 +10,7 @@ import serial
 import threading
 import pyte
 
-class Terminal(QtWidgets.QTextEdit):
+class Terminal(QtWidgets.QWidget):
     '''
     classdocs
     '''
@@ -23,8 +23,7 @@ class Terminal(QtWidgets.QTextEdit):
         '''
         super(self.__class__, self).__init__(parent)
         self.setFont(QtWidgets.QFont('Monospace', 10))
-        #self.setCursorWidth(0)
-        self.setCursorWidth(QtWidgets.QFontMetrics(self.font()).width(' '))
+        self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.setStyleSheet("background-color : black; color : #cccccc;");
         self.onReceiveText.connect(self._appendText)
         self.serial = None
@@ -32,6 +31,15 @@ class Terminal(QtWidgets.QTextEdit):
         self.stream = pyte.Stream()
         self.vt = pyte.Screen(80, 24)
         self.stream.attach(self.vt)
+        
+    def resizeEvent(self, event):
+        charSize = self.textRect(' ').size()
+        lines = int(event.size().height() / charSize.height())
+        columns = int(event.size().width() / charSize.width())
+        self.vt.resize(lines, columns)
+        
+    def focusNextPrevChild(self, n):
+        return False
         
     def open(self, port, speed):
         if self.serial is serial.Serial:
@@ -60,35 +68,35 @@ class Terminal(QtWidgets.QTextEdit):
                 self.onReceiveText.emit(text.decode(errors='ignore'))
         
     def paintEvent(self, event):
-        super().paintEvent(event)
         p = QtWidgets.QPainter()
-        p.begin(self.viewport())
-        self.moveCursorTo(self.vt.cursor)
-        p.fillRect(self.cursorRect(), QtWidgets.QBrush(QtCore.Qt.white))
+        p.begin(self)
+        pal = self.palette()
+        p.fillRect(QtCore.QRect(QtCore.QPoint(), self.size()), 
+                   pal.color(pal.Background))
+        textSize = self.textRect(' ' * self.vt.size[1]).size()
+        bound = QtCore.QRect(QtCore.QPoint(), textSize)
+        flags = QtCore.Qt.AlignLeft | QtCore.Qt.AlignBottom
+        for line in self.vt.display:
+            p.drawText(bound, flags, line)
+            bound.translate(0, bound.height())
+        p.fillRect(self.cursorRect(), pal.color(pal.Foreground))
         p.end()
+
+    def textRect(self, text):
+        textSize = QtWidgets.QFontMetrics(self.font()).size(0, text)
+        return QtCore.QRect(QtCore.QPoint(), textSize)
         
-    def virtualCursorRect(self):
-        textSize = QtWidgets.QFontMetrics(self.font()).size(0, ' ')
-        r = QtCore.QRect(QtCore.QPoint(), textSize)
-        textCursor = self.vt.cursor()
+    def cursorRect(self):
+        r = self.textRect(' ')
         r.moveTopLeft(QtCore.QPoint(0,0) + 
-                      QtCore.QPoint(textCursor[0]*r.width(),
-                                    textCursor[1]*r.height()))
+                      QtCore.QPoint(self.vt.cursor.x * r.width(),
+                                    self.vt.cursor.y * r.height()))
         return r
     
-    def moveCursorTo(self, pos):
-        line = pos.y
-        col = pos.x
-        c = self.textCursor()
-        c.setPosition(0, c.MoveAnchor)
-        c.movePosition(c.Down, c.MoveAnchor, line+1);
-        c.movePosition(c.NextCharacter, c.MoveAnchor, col);
-        self.setTextCursor(c)
-        
     @QtCore.Slot(str)
     def _appendText(self, text):
         self.stream.feed(text)
-        self.setPlainText('\n'.join(self.vt.display))
+        self.update()
     
     def keyPressEvent(self, event):
         if self.serial and self.serial.isOpen():
