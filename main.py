@@ -11,7 +11,7 @@ from pyqode.python.backend import server
 from pyqode.python.widgets import PyCodeEdit, PyOutlineTreeWidget
 from pyqode.qt import QtWidgets, QtCore
 
-_ = lambda s: QtCore.QObject().tr(s)
+i18n = lambda s: QtCore.QObject().tr(s)
 
 
 def serial_ports():
@@ -56,8 +56,8 @@ class WidgetSpacer(QtWidgets.QWidget):
 
 class SnipplerWidget(QtWidgets.QDockWidget):
     def __init__(self, parent):
-        super(SnipplerWidget, self).__init__(_('Snipplets'), parent)
-        self.setWindowTitle(_("Snipplets"))
+        super(SnipplerWidget, self).__init__(i18n('Snipplets'), parent)
+        self.setWindowTitle(i18n("Snipplets"))
         self.snippletView = QtWidgets.QListWidget(self)
         self.setWidget(self.snippletView)
         self.loadSnipplets()
@@ -81,13 +81,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.cwd = QtCore.QDir.homePath()
-        self.setWindowTitle(_("Edu CIAA MicroPython"))
+        self.setWindowTitle(i18n("Edu CIAA MicroPython"))
 
         self.editor = PyCodeEdit(server_script=server.__file__)
         self.term = termWidget.Terminal(self)
         self.outline = PyOutlineTreeWidget()
         self.outline.set_editor(self.editor)
-        self.dock_outline = QtWidgets.QDockWidget(_('Outline'))
+        self.dock_outline = QtWidgets.QDockWidget(i18n('Outline'))
         self.dock_outline.setWidget(self.outline)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_outline)
         
@@ -104,7 +104,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.i18n()
 
         self.resize(800, 600)
-        
+
+    def __enter__(self):
+        self.show()
+    
+    def __exit__(self, t, v, bt):
+        self.terminate()
+    
     def i18n(self, actions=None):
         if not actions:
             actions = self.editor.actions()
@@ -120,11 +126,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def makeAppToolBar(self):
         bar = QtWidgets.QToolBar(self)
         bar.setIconSize(QtCore.QSize(48, 48))
-        bar.addAction(icon("document-new"), "New", self.fileNew)
-        bar.addAction(icon("document-open"), "Open", self.fileOpen)
-        bar.addAction(icon("document-save"), "Save", self.fileSave)
-        bar.addAction(icon("run"), "Run", self.progRun)
-        bar.addAction(icon("download"), "Download", self.progDownload)
+        bar.addAction(icon("document-new"), i18n("New"), self.fileNew)
+        bar.addAction(icon("document-open"), i18n("Open"), self.fileOpen)
+        bar.addAction(icon("document-save"), i18n("Save"), self.fileSave)
+        bar.addAction(icon("run"), i18n("Run"), self.progRun)
+        bar.addAction(icon("download"), i18n("Download"), self.progDownload)
         bar.addWidget(WidgetSpacer(self))
         self.termAction = bar.addAction(icon("terminal"), "Terminal",
             self.openTerm)
@@ -155,8 +161,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def fileOpen(self):
         name, dummy = QtWidgets.QFileDialog.getOpenFileName(
-            self, _("Open File"), self.cwd,
-            _("Python files (*.py);;All files (*)"))
+            self, i18n("Open File"), self.cwd,
+            i18n("Python files (*.py);;All files (*)"))
         if name:
             self.editor.file.open(name)
             self.cwd = os.path.dirname(name)
@@ -164,8 +170,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def fileSave(self):
         if not self.editor.file.path:
             path, dummy = QtWidgets.QFileDialog.getSaveFileName(
-                self, _("Open File"),
-                self.cwd, _("Python files (*.py);;All files (*)"))
+                self, i18n("Save File"), self.cwd,
+                i18n("Python files (*.py);;All files (*)"))
         else:
             path = self.editor.file.path
         if path:
@@ -184,10 +190,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def progDownload(self):
         print("TODO")
 
+def main():
+    app = QtWidgets.QApplication(sys.argv)
+    with MainWindow():
+        app.exec_()
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    app.exec_()
-    window.terminate()
+    main()
