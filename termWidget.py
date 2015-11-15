@@ -46,7 +46,7 @@ class Terminal(QtWidgets.QWidget):
         if self.serial is serial.Serial:
             self.serial.close()
         try:
-            self.serial = serial.Serial(port, speed, timeout=0)
+            self.serial = serial.Serial(port, speed, timeout=None)
             self._startThread()
         except serial.SerialException as e:
             print(e)

@@ -62,11 +62,11 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         self.setWidget(self.snippletView)
         self.loadSnipplets()
         self.snippletView.itemDoubleClicked.connect(self._insertToParent)
-        
+
     def _insertToParent(self, item):
-        print("insertToParent", item)
+        print(("insertToParent", item))
         self.parent().editor.insertPlainText(item.toolTip())
-        
+
     @QtCore.Slot()
     def loadSnipplets(self):
         print("TODO")
@@ -90,7 +90,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_outline = QtWidgets.QDockWidget(i18n('Outline'))
         self.dock_outline.setWidget(self.outline)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_outline)
-        
+
         self.snippler = SnipplerWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.snippler)
 
@@ -107,10 +107,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __enter__(self):
         self.show()
-    
+
     def __exit__(self, t, v, bt):
         self.terminate()
-    
+
     def i18n(self, actions=None):
         if not actions:
             actions = self.editor.actions()
@@ -119,7 +119,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 action.setText(pyqode_i18n.tr(action.text()))
             if action.menu():
                 self.i18n(action.menu().actions())
-        
+
     def terminate(self):
         self.editor.backend.stop()
 
@@ -186,7 +186,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def progRun(self):
         print("TODO")
-    
+
     def progDownload(self):
         print("TODO")
 
