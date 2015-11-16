@@ -14,7 +14,6 @@ class Terminal(QtWidgets.QWidget):
     '''
     classdocs
     '''
-         
     def __init__(self, parent):
         '''
         Constructor
@@ -28,17 +27,24 @@ class Terminal(QtWidgets.QWidget):
         self.stream = pyte.Stream()
         self.vt = pyte.Screen(80, 24)
         self.stream.attach(self.vt)
-        
+    
     def resizeEvent(self, event):
         charSize = self.textRect(' ').size()
         lines = int(event.size().height() / charSize.height())
         columns = int(event.size().width() / charSize.width())
         self.vt.resize(lines, columns)
         self.vt.reset()
-        
+    
     def focusNextPrevChild(self, n):
         return False
-        
+    
+    def close(self):
+        if self.serial:
+            self.serial.close()
+        if self.thread and self.thread.isAlive():
+            self.thread.join()
+            self.thread = None
+
     def open(self, port, speed):
         '''
             Open serial 'port' as speed 'speed'
@@ -46,7 +52,7 @@ class Terminal(QtWidgets.QWidget):
         if self.serial is serial.Serial:
             self.serial.close()
         try:
-            self.serial = serial.Serial(port, speed, timeout=None)
+            self.serial = serial.Serial(port, speed, timeout=0.5)
             self._startThread()
         except serial.SerialException as e:
             print(e)
@@ -61,11 +67,8 @@ class Terminal(QtWidgets.QWidget):
         
     def _readThread(self):
         while self.serial.isOpen():
-            text = self.serial.read(1)
+            text = self.serial.read(self.serial.inWaiting() or 1)
             if text:
-                n = self.serial.inWaiting()
-                if n:
-                    text = text + self.serial.read(n)
                 self.stream.feed(text.decode(errors='ignore'))
                 self.update()
         
@@ -73,7 +76,7 @@ class Terminal(QtWidgets.QWidget):
         p = QtWidgets.QPainter()
         p.begin(self)
         pal = self.palette()
-        p.fillRect(QtCore.QRect(QtCore.QPoint(), self.size()), 
+        p.fillRect(QtCore.QRect(QtCore.QPoint(), self.size()),
                    pal.color(pal.Background))
         textSize = self.textRect(' ' * self.vt.size[1]).size()
         bound = QtCore.QRect(QtCore.QPoint(), textSize)
@@ -90,7 +93,7 @@ class Terminal(QtWidgets.QWidget):
         
     def cursorRect(self):
         r = self.textRect(' ')
-        r.moveTopLeft(QtCore.QPoint(0,0) + 
+        r.moveTopLeft(QtCore.QPoint(0, 0) + 
                       QtCore.QPoint(self.vt.cursor.x * r.width(),
                                     self.vt.cursor.y * r.height()))
         return r

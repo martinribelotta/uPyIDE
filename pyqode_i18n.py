@@ -6,6 +6,15 @@ Created on 1 de nov. de 2015
 
 _dict = {
     "es": {
+        "Edu CIAA MicroPython": "Edu CIAA MicroPython",
+        "Open": "Abrir",
+        "Save": "Guardar",
+        "New": "Nuevo",
+        "Run": "Ejecutar",
+        "Terminal": "Terminal",
+        "Outline": "Simbolos",
+        "Snipplets": "Trozos de codigo",
+        "Download": "Grabar",
         "Undo": "Deshacer",
         "Redo": "Rehacer",
         "Cut": "Cortar",
@@ -18,11 +27,11 @@ _dict = {
         "Go to line": "Ir a la linea",
         "Search": "Buscar",
         "Select": "Seleccionar",
-        "Case": "[TODO] Case",
-        "Go to assignments": "[TODO] Go to assignments",
+        "Case": "Capitalización",
+        "Go to assignments": "Ir a...",
         "Comment/Uncomment": "Comentar/Descomentar",
         "Show documentation": "Ver documentación",
-        "Folding": "[TODO] Folding",
+        "Folding": "Plegar codigo",
         "Encodings": "Codificación",
         "Select word": "Seleccionar palabra",
         "Select extended word": "Seleccionar palabra extendida",
@@ -32,8 +41,10 @@ _dict = {
         "Search and replace": "Buscar y reemplazar",
         "Find next": "Encontrar siguiente",
         "Find previous": "Encontrar anterior",
-        "Convert to lower case ": "Convertir a minusculas",
-        "Convert to UPPER CASE ": "Convertir a MAYUSCULAS",
+        "Convert to lower case": "Convertir a minusculas",
+        "Convert to UPPER CASE": "Convertir a MAYUSCULAS",
+        "Document was modify.\nSave changes?": "El documento ha sido "
+            "modificado\nGuardar los cambios?"
     }
 }
 

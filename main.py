@@ -11,7 +11,7 @@ from pyqode.python.backend import server
 from pyqode.python.widgets import PyCodeEdit, PyOutlineTreeWidget
 from pyqode.qt import QtWidgets, QtCore
 
-i18n = lambda s: QtCore.QObject().tr(s)
+i18n = lambda s: pyqode_i18n.tr(s)
 
 
 def serial_ports():
@@ -82,7 +82,6 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         self.cwd = QtCore.QDir.homePath()
         self.setWindowTitle(i18n("Edu CIAA MicroPython"))
-
         self.editor = PyCodeEdit(server_script=server.__file__)
         self.term = termWidget.Terminal(self)
         self.outline = PyOutlineTreeWidget()
@@ -90,19 +89,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dock_outline = QtWidgets.QDockWidget(i18n('Outline'))
         self.dock_outline.setWidget(self.outline)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_outline)
-
         self.snippler = SnipplerWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.snippler)
-
         self.stack = QtWidgets.QStackedWidget(self)
         self.stack.addWidget(self.editor)
         self.stack.addWidget(self.term)
-
         self.setCentralWidget(self.stack)
-
         self.makeAppToolBar()
         self.i18n()
-
         self.resize(800, 600)
 
     def __enter__(self):
@@ -121,6 +115,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.i18n(action.menu().actions())
 
     def terminate(self):
+        self.term.close()
         self.editor.backend.stop()
 
     def makeAppToolBar(self):
@@ -129,14 +124,13 @@ class MainWindow(QtWidgets.QMainWindow):
         bar.addAction(icon("document-new"), i18n("New"), self.fileNew)
         bar.addAction(icon("document-open"), i18n("Open"), self.fileOpen)
         bar.addAction(icon("document-save"), i18n("Save"), self.fileSave)
+        bar.addWidget(WidgetSpacer(self))
         bar.addAction(icon("run"), i18n("Run"), self.progRun)
         bar.addAction(icon("download"), i18n("Download"), self.progDownload)
-        bar.addWidget(WidgetSpacer(self))
-        self.termAction = bar.addAction(icon("terminal"), "Terminal",
+        self.termAction = bar.addAction(icon("terminal"), i18n("Terminal"),
             self.openTerm)
         self.termAction.setCheckable(True)
         self.termAction.setMenu(self.terminalMenu())
-        #self.addToolBar(QtCore.Qt.LeftToolBarArea, bar)
         self.addToolBar(bar)
 
     def terminalMenu(self):
@@ -153,13 +147,34 @@ class MainWindow(QtWidgets.QMainWindow):
         return m
 
     def setPort(self, port):
-        print(("Set port: ", port))
         self.term.open(port, 115200)
 
     def fileNew(self):
+        if self.editor.dirty:
+            x = self.dirtySaveCancel()
+            if x == QtWidgets.QMessageBox.Save:
+                if not self.fileSave():
+                    return
+            elif x == QtWidgets.QMessageBox.Cancel:
+                return
         self.editor.file.close()
+        
+    def dirtySaveCancel(self):
+        return QtWidgets.QMessageBox.question(self, i18n("Document modified"),
+                                              i18n("Document was modify.\n"
+                                                   "Save changes?"),
+                                              QtWidgets.QMessageBox.Save,
+                                              QtWidgets.QMessageBox.Discard,
+                                              QtWidgets.QMessageBox.Cancel)
 
     def fileOpen(self):
+        if self.editor.dirty:
+            x = self.dirtySaveCancel()
+            if x == QtWidgets.QMessageBox.Save:
+                if not self.fileSave():
+                    return
+            elif x == QtWidgets.QMessageBox.Cancel:
+                return
         name, dummy = QtWidgets.QFileDialog.getOpenFileName(
             self, i18n("Open File"), self.cwd,
             i18n("Python files (*.py);;All files (*)"))
@@ -174,8 +189,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 i18n("Python files (*.py);;All files (*)"))
         else:
             path = self.editor.file.path
-        if path:
-            self.editor.file.save(path)
+        if not path:
+            return False
+        self.editor.file.save(path)
+        return True
 
     def openTerm(self):
         if self.termAction.isChecked():
@@ -190,10 +207,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def progDownload(self):
         print("TODO")
 
+
 def main():
     app = QtWidgets.QApplication(sys.argv)
     with MainWindow():
         app.exec_()
+
 
 if __name__ == "__main__":
     main()
