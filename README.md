@@ -40,10 +40,12 @@ Actions:
 
 ###### Symbol bar
 This view allows quick access to the symbols in the code on editor
+
 ![Toolbar](doc/simbolbrowser.png)
 
 ###### Snipplets
 This view show some code snipplets to speed edition
+
 ![Toolbar](doc/snipplets.png)
 
 #### Terminal
