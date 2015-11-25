@@ -71,6 +71,9 @@ class SnipplerWidget(QtWidgets.QDockWidget):
     def loadSnipplets(self):
         print("TODO")
         filename = os.path.join(os.path.dirname(__file__), 'snipplets.xml')
+        self.snippletView.setStyleSheet('''QToolTip {
+            font-family: "monospace";
+        }''')
         for child in ElementTree.parse(filename).getroot():
             item = QtWidgets.QListWidgetItem(self.snippletView)
             item.setText(child.attrib["name"])
