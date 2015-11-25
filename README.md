@@ -36,15 +36,15 @@ Actions:
   - **Download**: Save script into board
   - **Show Terminal**: Switch to terminal view
 
-#### Side bar
+#### Side Views
 
 ###### Symbol bar
-This toolbar allows quick access to the symbols in the code on editor
+This view allows quick access to the symbols in the code on editor
 ![Toolbar](doc/simbolbrowser.png)
 
 ###### Snipplets
-This toolbar allows quick access to the symbols in the code on editor
-![Toolbar](doc/simbolbrowser.png)
+This view show some code snipplets to speed edition
+![Toolbar](doc/snipplets.png)
 
 #### Terminal
 
