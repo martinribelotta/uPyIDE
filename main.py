@@ -145,7 +145,7 @@ class MainWindow(QtWidgets.QMainWindow):
             g.actions()[0].setChecked(True)
             self.setPort(g.actions()[0].text())
         return m
-
+    
     def setPort(self, port):
         self.term.open(port, 115200)
 
@@ -202,7 +202,28 @@ class MainWindow(QtWidgets.QMainWindow):
             self.stack.setCurrentIndex(0)
 
     def progRun(self):
-        print("TODO")
+        def progrun2(text):
+            #print("{} {}".format(4, progrun2.text))
+            progrun2.text += text
+            if progrun2.text.endswith(b'\x04>'):
+                #print("{} {}".format(5, progrun2.text))
+                return True
+            return False
+        def progrun1(text):
+            progrun1.text += text
+            #print("{} {}".format(2, progrun1.text))
+            if progrun1.text.endswith(b'to exit\r\n>'):
+                progrun2.text = b''
+                #print("{} {}".format(3, progrun1.text))
+                pgm = self.editor.toPlainText()
+                cmd = 'print("\033c")\r{}\r\x04'.format(pgm)
+                #print("{} {}".format(3.5, cmd))
+                self.term.remoteExec(bytes(cmd, 'utf-8'), progrun2)
+                return True
+            return False
+        progrun1.text = b''
+        #print(1)
+        self.term.remoteExec(b'\r\x03\x03\r\x01', progrun1)
 
     def progDownload(self):
         print("TODO")
