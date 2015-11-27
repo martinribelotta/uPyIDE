@@ -7,11 +7,16 @@ import xml.etree.ElementTree as ElementTree
 import pyqode_i18n
 import termWidget
 
-from pyqode.python.backend import server
-from pyqode.python.widgets import PyCodeEdit, PyOutlineTreeWidget
-from pyqode.qt import QtWidgets, QtCore
+import pyqode.python.backend.server as server
+import pyqode.python.widgets as widgets
+import pyqode.qt.QtWidgets as QtWidgets
+import pyqode.qt.QtCore as QtCore
 
-i18n = lambda s: pyqode_i18n.tr(s)
+
+__version__ = '1.0'
+
+
+def i18n(s): return pyqode_i18n.tr(s)
 
 
 def serial_ports():
@@ -85,9 +90,9 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMainWindow.__init__(self)
         self.cwd = QtCore.QDir.homePath()
         self.setWindowTitle(i18n("Edu CIAA MicroPython"))
-        self.editor = PyCodeEdit(server_script=server.__file__)
+        self.editor = widgets.PyCodeEdit(server_script=server.__file__)
         self.term = termWidget.Terminal(self)
-        self.outline = PyOutlineTreeWidget()
+        self.outline = widgets.PyOutlineTreeWidget()
         self.outline.set_editor(self.editor)
         self.dock_outline = QtWidgets.QDockWidget(i18n('Outline'))
         self.dock_outline.setWidget(self.outline)
@@ -131,7 +136,7 @@ class MainWindow(QtWidgets.QMainWindow):
         bar.addAction(icon("run"), i18n("Run"), self.progRun)
         bar.addAction(icon("download"), i18n("Download"), self.progDownload)
         self.termAction = bar.addAction(icon("terminal"), i18n("Terminal"),
-            self.openTerm)
+                                        self.openTerm)
         self.termAction.setCheckable(True)
         self.termAction.setMenu(self.terminalMenu())
         self.addToolBar(bar)
@@ -148,9 +153,19 @@ class MainWindow(QtWidgets.QMainWindow):
             g.actions()[0].setChecked(True)
             self.setPort(g.actions()[0].text())
         return m
-    
+
     def setPort(self, port):
         self.term.open(port, 115200)
+
+    def closeEvent(self, event):
+        event.accept()
+        if self.editor.dirty:
+            x = self.dirtySaveCancel()
+            if x == QtWidgets.QMessageBox.Save:
+                if not self.fileSave():
+                    event.ignore()
+            elif x == QtWidgets.QMessageBox.Cancel:
+                event.ignore()
 
     def fileNew(self):
         if self.editor.dirty:
@@ -161,14 +176,17 @@ class MainWindow(QtWidgets.QMainWindow):
             elif x == QtWidgets.QMessageBox.Cancel:
                 return
         self.editor.file.close()
-        
+
     def dirtySaveCancel(self):
-        return QtWidgets.QMessageBox.question(self, i18n("Document modified"),
-                                              i18n("Document was modify.\n"
-                                                   "Save changes?"),
-                                              QtWidgets.QMessageBox.Save,
-                                              QtWidgets.QMessageBox.Discard,
-                                              QtWidgets.QMessageBox.Cancel)
+        d = QtWidgets.QMessageBox()
+        d.setWindowTitle(i18n("Question"))
+        d.setText(i18n("Document was modify"))
+        d.setInformativeText(i18n("Save changes?"))
+        d.setIcon(QtWidgets.QMessageBox.Question)
+        d.setStandardButtons(QtWidgets.QMessageBox.Save |
+                             QtWidgets.QMessageBox.Discard |
+                             QtWidgets.QMessageBox.Cancel)
+        return d.exec_()
 
     def fileOpen(self):
         if self.editor.dirty:
@@ -205,38 +223,36 @@ class MainWindow(QtWidgets.QMainWindow):
             self.stack.setCurrentIndex(0)
 
     def progRun(self):
+        self._targetExec(self.editor.toPlainText())
+
+    def _targetExec(self, script):
         def progrun2(text):
-            #print("{} {}".format(4, progrun2.text))
+            # print("{} {}".format(4, progrun2.text))
             progrun2.text += text
             if progrun2.text.endswith(b'\x04>'):
-                #print("{} {}".format(5, progrun2.text))
+                # print("{} {}".format(5, progrun2.text))
                 return True
             return False
+
         def progrun1(text):
             progrun1.text += text
-            #print("{} {}".format(2, progrun1.text))
+            # print("{} {}".format(2, progrun1.text))
             if progrun1.text.endswith(b'to exit\r\n>'):
                 progrun2.text = b''
-                #print("{} {}".format(3, progrun1.text))
-                pgm = self.editor.toPlainText()
-                cmd = 'print("\033c")\r{}\r\x04'.format(pgm)
-                #print("{} {}".format(3.5, cmd))
+                # print("{} {}".format(3, progrun1.text))
+                cmd = 'print("\033c")\r{}\r\x04'.format(script)
+                # print("{} {}".format(3.5, cmd))
                 self.term.remoteExec(bytes(cmd, 'utf-8'), progrun2)
                 return True
             return False
         progrun1.text = b''
-        #print(1)
+        # print(1)
         self.term.remoteExec(b'\r\x03\x03\r\x01', progrun1)
 
     def progDownload(self):
         print("TODO")
 
 
-def main():
-    app = QtWidgets.QApplication(sys.argv)
-    with MainWindow():
-        app.exec_()
-
-
-if __name__ == "__main__":
-    main()
+app = QtWidgets.QApplication(sys.argv)
+with MainWindow():
+    app.exec_()

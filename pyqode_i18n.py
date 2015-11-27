@@ -1,8 +1,4 @@
-'''
-Created on 1 de nov. de 2015
-
-@author: martin
-'''
+# -*- coding: UTF-8 -*-
 
 _dict = {
     "es": {
@@ -43,12 +39,14 @@ _dict = {
         "Find previous": "Encontrar anterior",
         "Convert to lower case": "Convertir a minusculas",
         "Convert to UPPER CASE": "Convertir a MAYUSCULAS",
-        "Document was modify.\nSave changes?": "El documento ha sido "
-            "modificado\nGuardar los cambios?"
+        "Question": "Pregunta",
+        "Document was modify": "El documento se ha modificado",
+        "Save changes?": "¿Guardar los cambios?"
     }
 }
 
-def tr(text, lang = "es"):
+
+def tr(text, lang="es"):
     if text in _dict[lang].keys():
         return _dict[lang][text]
     else:

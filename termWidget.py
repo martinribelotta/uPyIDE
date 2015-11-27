@@ -10,6 +10,7 @@ import time
 import serial
 import threading
 import pyte
+import sys
 
 class Terminal(QtWidgets.QWidget):
     '''
@@ -20,7 +21,11 @@ class Terminal(QtWidgets.QWidget):
         Constructor
         '''
         super(self.__class__, self).__init__(parent)
-        self.setFont(QtWidgets.QFont('Monospace', 10))
+        self.setFont(QtWidgets.QFont({
+            'win32' : 'Consolas',
+            'linux' : 'Monospace',
+            'darwin': 'Andale Mono'
+        }.get(sys.platform, 'Courier'), 10))
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.setStyleSheet("background-color : black; color : #cccccc;");
         self._workers = []
@@ -30,6 +35,7 @@ class Terminal(QtWidgets.QWidget):
         self._vt = pyte.Screen(80, 24)
         self._stream.attach(self._vt)
         self._workers.append(self._processText)
+        self._stop = threading.Event()
 
     def resizeEvent(self, event):
         charSize = self.textRect(' ').size()
@@ -42,11 +48,12 @@ class Terminal(QtWidgets.QWidget):
         return False
     
     def close(self):
-        if self._serial:
-            self._serial.close()
+        self._stop.set()
         if self._thread and self._thread.isAlive():
             self._thread.join()
             self._thread = None
+        if self._serial:
+            self._serial.close()
 
     def open(self, port, speed):
         '''
@@ -73,12 +80,13 @@ class Terminal(QtWidgets.QWidget):
         if self._thread and self._thread.isAlive():
             self._thread.join()
             self._thread = None
+        self._stop.clear()
         self._thread = threading.Thread(target=self._readThread)
         self._thread.setDaemon(1)
         self._thread.start()
         
     def _readThread(self):
-        while self._serial.isOpen():
+        while not self._stop.isSet():
             text = self._serial.read(self._serial.inWaiting() or 1)
             if text:
                 self._workers = [w for w in self._workers if not w(text)]
