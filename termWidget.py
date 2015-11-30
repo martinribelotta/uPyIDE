@@ -11,23 +11,52 @@ import serial
 import threading
 import pyte
 import sys
+import glob
+
+
+def serial_ports():
+    """ Lists serial port names
+        :raises EnvironmentError:
+            On unsupported or unknown platforms
+        :returns:
+            A list of the serial ports available on the system
+    """
+    if sys.platform.startswith('win'):
+        ports = ['COM%s' % (i + 1) for i in range(256)]
+    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+        # this excludes your current terminal "/dev/tty"
+        ports = glob.glob('/dev/tty[A-Za-z]*')
+    elif sys.platform.startswith('darwin'):
+        ports = glob.glob('/dev/tty.*')
+    else:
+        raise EnvironmentError('Unsupported platform')
+    result = []
+    for port in ports:
+        try:
+            s = serial.Serial(port)
+            s.close()
+            result.append(port)
+        except (OSError, serial.SerialException):
+            pass
+    return result
+
 
 class Terminal(QtWidgets.QWidget):
     '''
     classdocs
     '''
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         '''
         Constructor
         '''
         super(self.__class__, self).__init__(parent)
         self.setFont(QtWidgets.QFont({
-            'win32' : 'Consolas',
-            'linux' : 'Monospace',
+            'win32': 'Consolas',
+            'linux': 'Monospace',
             'darwin': 'Andale Mono'
         }.get(sys.platform, 'Courier'), 10))
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.setStyleSheet("background-color : black; color : #cccccc;");
+        self.setStyleSheet("background-color : black; color : #cccccc;")
         self._workers = []
         self._serial = None
         self._thread = None
@@ -43,10 +72,10 @@ class Terminal(QtWidgets.QWidget):
         columns = int(event.size().width() / charSize.width())
         self._vt.resize(lines, columns)
         self._vt.reset()
-    
+
     def focusNextPrevChild(self, n):
         return False
-    
+
     def close(self):
         self._stop.set()
         if self._thread and self._thread.isAlive():
@@ -56,9 +85,6 @@ class Terminal(QtWidgets.QWidget):
             self._serial.close()
 
     def open(self, port, speed):
-        '''
-            Open _serial 'port' as speed 'speed'
-        '''
         if self._serial is serial.Serial:
             self._serial.close()
         try:
@@ -66,16 +92,16 @@ class Terminal(QtWidgets.QWidget):
             self._startThread()
         except serial.SerialException as e:
             print(e)
-    
+
     def remoteExec(self, cmd, interceptor=None):
         if interceptor:
             self._workers.append(interceptor)
-        cmd_b =  cmd if isinstance(cmd, bytes) else bytes(cmd, encoding='utf8')
+        cmd_b = cmd if isinstance(cmd, bytes) else bytes(cmd, encoding='utf8')
         # write command
         for i in range(0, len(cmd_b), 256):
             self._serial.write(cmd_b[i:min(i + 256, len(cmd_b))])
             time.sleep(0.01)
-    
+
     def _startThread(self):
         if self._thread and self._thread.isAlive():
             self._thread.join()
@@ -84,13 +110,13 @@ class Terminal(QtWidgets.QWidget):
         self._thread = threading.Thread(target=self._readThread)
         self._thread.setDaemon(1)
         self._thread.start()
-        
+
     def _readThread(self):
         while not self._stop.isSet():
             text = self._serial.read(self._serial.inWaiting() or 1)
             if text:
                 self._workers = [w for w in self._workers if not w(text)]
-    
+
     def _processText(self, text):
         self._stream.feed(text.decode(errors='ignore'))
         self.update()
@@ -114,14 +140,14 @@ class Terminal(QtWidgets.QWidget):
     def textRect(self, text):
         textSize = QtWidgets.QFontMetrics(self.font()).size(0, text)
         return QtCore.QRect(QtCore.QPoint(), textSize)
-        
+
     def cursorRect(self):
         r = self.textRect(' ')
-        r.moveTopLeft(QtCore.QPoint(0, 0) + 
+        r.moveTopLeft(QtCore.QPoint(0, 0) +
                       QtCore.QPoint(self._vt.cursor.x * r.width(),
                                     self._vt.cursor.y * r.height()))
         return r
-    
+
     def keyPressEvent(self, event):
         if self._serial and self._serial.isOpen():
             try:
@@ -138,3 +164,30 @@ class Terminal(QtWidgets.QWidget):
             if text:
                 self._serial.write(text)
             event.accept()
+
+
+def selectPort():
+    d = QtWidgets.QDialog()
+    l = QtWidgets.QVBoxLayout(d)
+    combo = QtWidgets.QComboBox(d)
+    combo.addItems(serial_ports())
+    ok = QtWidgets.QPushButton("Ok", d)
+    ok.clicked.connect(d.close)
+    l.addWidget(combo)
+    l.addWidget(ok)
+    d.exec_()
+    return combo.currentText()
+
+
+def main():
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    w = Terminal()
+    w.resize(640, 480)
+    w.show()
+    w.open(selectPort(), 115200)
+    w.remoteExec('\x04')
+    app.exec_()
+
+if __name__ == "__main__":
+    main()

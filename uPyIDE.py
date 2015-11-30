@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-import serial
-import glob
 import xml.etree.ElementTree as ElementTree
 import pyqode_i18n
 import termWidget
@@ -16,34 +14,8 @@ import pyqode.qt.QtCore as QtCore
 __version__ = '1.0'
 
 
-def i18n(s): return pyqode_i18n.tr(s)
-
-
-def serial_ports():
-    """ Lists serial port names
-        :raises EnvironmentError:
-            On unsupported or unknown platforms
-        :returns:
-            A list of the serial ports available on the system
-    """
-    if sys.platform.startswith('win'):
-        ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-        # this excludes your current terminal "/dev/tty"
-        ports = glob.glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
-    else:
-        raise EnvironmentError('Unsupported platform')
-    result = []
-    for port in ports:
-        try:
-            s = serial.Serial(port)
-            s.close()
-            result.append(port)
-        except (OSError, serial.SerialException):
-            pass
-    return result
+def i18n(s):
+    return pyqode_i18n.tr(s)
 
 
 def icon(name):
@@ -145,7 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
         m = QtWidgets.QMenu(self)
         g = QtWidgets.QActionGroup(m)
         g.triggered.connect(lambda a: self.setPort(a.text()))
-        for s in serial_ports():
+        for s in termWidget.serial_ports():
             a = m.addAction(s)
             g.addAction(a)
             a.setCheckable(True)
@@ -224,6 +196,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def progRun(self):
         self._targetExec(self.editor.toPlainText())
+        self.termAction.setChecked(True)
+        self.openTerm()
 
     def _targetExec(self, script):
         def progrun2(text):
@@ -253,6 +227,10 @@ class MainWindow(QtWidgets.QMainWindow):
         print("TODO")
 
 
-app = QtWidgets.QApplication(sys.argv)
-with MainWindow():
-    app.exec_()
+def main():
+    app = QtWidgets.QApplication(sys.argv)
+    with MainWindow():
+        app.exec_()
+
+if __name__ == "__main__":
+    main()
