@@ -1,17 +1,12 @@
-'''
-Created on 6 de nov. de 2015
-
-@author: martin
-'''
-
-from pyqode.qt import QtWidgets, QtCore
-
-import time
-import serial
-import threading
-import pyte
-import sys
 import glob
+import pyte
+import serial
+import sys
+import threading
+import time
+
+import pyqode.qt.QtWidgets as QtWidgets
+import pyqode.qt.QtCore as QtCore
 
 
 def serial_ports():
@@ -180,7 +175,6 @@ def selectPort():
 
 
 def main():
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     w = Terminal()
     w.resize(640, 480)

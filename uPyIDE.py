@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
-import xml.etree.ElementTree as ElementTree
-import pyqode_i18n
-import termWidget
 
 import pyqode.python.backend.server as server
 import pyqode.python.widgets as widgets
-import pyqode.qt.QtWidgets as QtWidgets
 import pyqode.qt.QtCore as QtCore
+import pyqode.qt.QtWidgets as QtWidgets
+import pyqode_i18n
+import termWidget
+import xml.etree.ElementTree as ElementTree
 
 
 __version__ = '1.0'
@@ -58,6 +59,8 @@ class SnipplerWidget(QtWidgets.QDockWidget):
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    onListDir = QtCore.Signal(str)
+
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         self.cwd = QtCore.QDir.homePath()
@@ -78,6 +81,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.makeAppToolBar()
         self.i18n()
         self.resize(800, 600)
+        self.onListDir.connect(lambda l: self._showDir(l))
 
     def __enter__(self):
         self.show()
@@ -199,12 +203,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.termAction.setChecked(True)
         self.openTerm()
 
-    def _targetExec(self, script):
+    def _targetExec(self, script, continuation=None):
         def progrun2(text):
             # print("{} {}".format(4, progrun2.text))
             progrun2.text += text
             if progrun2.text.endswith(b'\x04>'):
                 # print("{} {}".format(5, progrun2.text))
+                if callable(continuation):
+                    continuation(progrun2.text)
                 return True
             return False
 
@@ -223,8 +229,25 @@ class MainWindow(QtWidgets.QMainWindow):
         # print(1)
         self.term.remoteExec(b'\r\x03\x03\r\x01', progrun1)
 
+    def showDir(self):
+        def finished(raw):
+            text = ''.join(re.findall(r"(\[.*?\])", raw.decode()))
+            print(raw, text)
+            self.onListDir.emit(text)
+        self._targetExec('print(os.listdir())', finished)
+
+    def _showDir(self, text):
+        items = eval(text)
+        d = QtWidgets.QDialog(self)
+        l = QtWidgets.QVBoxLayout(d)
+        h = QtWidgets.QListWidget(d)
+        l.addWidget(h)
+        h.addItems(items)
+        h.itemClicked.connect(d.accept)
+        d.exec_()
+
     def progDownload(self):
-        print("TODO")
+        self.showDir()
 
 
 def main():
