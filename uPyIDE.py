@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import base64
 
 import pyqode.python.backend.server as server
 import pyqode.python.widgets as widgets
@@ -246,8 +247,30 @@ class MainWindow(QtWidgets.QMainWindow):
         h.itemClicked.connect(d.accept)
         d.exec_()
 
+    def _writeRemoteFile(self, local_name):
+        def finished(raw):
+            print('_writeRemoteFile terminated: ', raw)
+        remote_name = '/flash/{}'.format(os.path.basename(local_name))
+        with open(local_name, 'rb') as f:
+            data = base64.b16encode(f.read())
+        cmd = "import ubinascii\r" \
+              "with open('{}', 'wb') as f:\r" \
+              "    f.write(ubinascii.unhexlify({}))".format(remote_name, data)
+        print("Writing remote to ", remote_name, data)
+        print("--------------\n", cmd, "\n--------------")
+        self._targetExec(cmd, finished)
+
     def progDownload(self):
-        self.showDir()
+        if not self.editor.file.path:
+            x = self.dirtySaveCancel()
+            if x == QtWidgets.QMessageBox.Save:
+                if not self.fileSave():
+                    return
+            elif x == QtWidgets.QMessageBox.Cancel:
+                return
+            elif x == QtWidgets.QMessageBox.Discard:
+                return
+        self._writeRemoteFile(self.editor.file.path)
 
 
 def main():
