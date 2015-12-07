@@ -3,15 +3,18 @@ import os
 import re
 import sys
 import base64
+import glob
 
 import pyqode.python.backend.server as server
 import pyqode.python.widgets as widgets
 import pyqode.qt.QtCore as QtCore
+
 import pyqode.qt.QtWidgets as QtWidgets
 import pyqode_i18n
 import termWidget
 import xml.etree.ElementTree as ElementTree
 
+import resources
 
 __version__ = '1.0'
 
@@ -21,8 +24,16 @@ def i18n(s):
 
 
 def icon(name):
-    return QtWidgets.QIcon(os.path.join(os.path.dirname(__file__),
-                           "{}.svg".format(name)))
+    return QtWidgets.QIcon(":/images/{}.svg".format(name))
+
+
+def rccfile(path):
+    f = QtCore.QFile(path)
+    if not f.open(QtCore.QFile.ReadOnly):
+        return None
+    s = f.readAll()
+    f.close()
+    return s
 
 
 class WidgetSpacer(QtWidgets.QWidget):
@@ -46,17 +57,36 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         print(("insertToParent", item))
         self.parent().editor.insertPlainText(item.toolTip())
 
+    def addSnipplet(self, description, contents):
+        item = QtWidgets.QListWidgetItem(self.snippletView)
+        item.setText(description)
+        item.setToolTip(contents)
+
+    def loadSnippletFrom(self, inp):
+        xml = ElementTree.fromstring(inp) if type(inp) is str else  \
+            ElementTree.parse(inp).getroot()
+        for child in xml:
+            self.addSnipplet(child.attrib["name"], child.text)
+
+    def loadCodeSnipplet(self, source):
+        with open(source) as f:
+            s = f.read()
+            r = re.compile(r'^# Description: (.*)[\r\n]*')
+            description = ''.join(re.findall(r, s))
+            contents = re.sub(r, '', s)
+            if description and contents:
+                self.addSnipplet(description, contents)
+
     @QtCore.Slot()
     def loadSnipplets(self):
-        print("TODO")
-        filename = os.path.join(os.path.dirname(__file__), 'snipplets.xml')
         self.snippletView.setStyleSheet('''QToolTip {
             font-family: "monospace";
         }''')
-        for child in ElementTree.parse(filename).getroot():
-            item = QtWidgets.QListWidgetItem(self.snippletView)
-            item.setText(child.attrib["name"])
-            item.setToolTip(child.text)
+        self.loadSnippletFrom(rccfile(':snipplets.xml').data().decode())
+        snipplet_glob = os.path.join(os.path.dirname(__file__), '..', 'share',
+                                     'snipplet', '*.py')
+        for source in glob.glob(snipplet_glob):
+            self.loadCodeSnipplet(source)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -137,7 +167,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         event.accept()
         if self.editor.dirty:
-            x = self.dirtySaveCancel()
+            x = self.dirtySaveDischartCancel()
             if x == QtWidgets.QMessageBox.Save:
                 if not self.fileSave():
                     event.ignore()
@@ -146,7 +176,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def fileNew(self):
         if self.editor.dirty:
-            x = self.dirtySaveCancel()
+            x = self.dirtySaveDischartCancel()
             if x == QtWidgets.QMessageBox.Save:
                 if not self.fileSave():
                     return
@@ -154,7 +184,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
         self.editor.file.close()
 
-    def dirtySaveCancel(self):
+    def dirtySaveDischartCancel(self):
         d = QtWidgets.QMessageBox()
         d.setWindowTitle(i18n("Question"))
         d.setText(i18n("Document was modify"))
@@ -165,9 +195,19 @@ class MainWindow(QtWidgets.QMainWindow):
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
+    def dirtySaveCancel(self):
+        d = QtWidgets.QMessageBox()
+        d.setWindowTitle(i18n("Question"))
+        d.setText(i18n("Document was modify"))
+        d.setInformativeText(i18n("Save changes?"))
+        d.setIcon(QtWidgets.QMessageBox.Question)
+        d.setStandardButtons(QtWidgets.QMessageBox.Save |
+                             QtWidgets.QMessageBox.Cancel)
+        return d.exec_()
+
     def fileOpen(self):
         if self.editor.dirty:
-            x = self.dirtySaveCancel()
+            x = self.dirtySaveDischartCancel()
             if x == QtWidgets.QMessageBox.Save:
                 if not self.fileSave():
                     return
@@ -262,13 +302,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def progDownload(self):
         if not self.editor.file.path:
-            x = self.dirtySaveCancel()
-            if x == QtWidgets.QMessageBox.Save:
-                if not self.fileSave():
-                    return
-            elif x == QtWidgets.QMessageBox.Cancel:
+            if self.dirtySaveCancel() == QtWidgets.QMessageBox.Cancel:
                 return
-            elif x == QtWidgets.QMessageBox.Discard:
+            if not self.fileSave():
                 return
         self._writeRemoteFile(self.editor.file.path)
 
@@ -279,4 +315,5 @@ def main():
         app.exec_()
 
 if __name__ == "__main__":
+    resources.__file__
     main()

@@ -41,13 +41,17 @@ _dict = {
         "Convert to UPPER CASE": "Convertir a MAYUSCULAS",
         "Question": "Pregunta",
         "Document was modify": "El documento se ha modificado",
-        "Save changes?": "¿Guardar los cambios?"
+        "Save changes?": "¿Guardar los cambios?",
+        "Save File": "Guardar Archivo",
+        "Open File": "Abrir Archivo",
+        "Python files (*.py);;All files (*)": "Archivos Python (*.py);;"
+                                              "Todos los archivos (*)"
     }
 }
 
 
 def tr(text, lang="es"):
-    if text in _dict[lang].keys():
+    if lang in _dict and text in _dict[lang].keys():
         return _dict[lang][text]
     else:
         return "*{}".format(text)
