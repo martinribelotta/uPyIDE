@@ -39,9 +39,8 @@ def rccfile(path):
 class WidgetSpacer(QtWidgets.QWidget):
     def __init__(self, parent):
         super(WidgetSpacer, self).__init__(parent)
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                           QtWidgets.QSizePolicy.Expanding)
 
 
 class SnipplerWidget(QtWidgets.QDockWidget):
@@ -54,7 +53,6 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         self.snippletView.itemDoubleClicked.connect(self._insertToParent)
 
     def _insertToParent(self, item):
-        print(("insertToParent", item))
         self.parent().editor.insertPlainText(item.toolTip())
 
     def addSnipplet(self, description, contents):
@@ -236,6 +234,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.termAction.isChecked():
             self.stack.setCurrentIndex(1)
             self.term.setFocus()
+            # self.term.remoteExec(b'\x04')
         else:
             self.stack.setCurrentIndex(0)
 
@@ -261,7 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if progrun1.text.endswith(b'to exit\r\n>'):
                 progrun2.text = b''
                 # print("{} {}".format(3, progrun1.text))
-                cmd = 'print("\033c")\r{}\r\x04'.format(script)
+                cmd = 'print("\033c")\r{}\r\x04\x02'.format(script)
                 # print("{} {}".format(3.5, cmd))
                 self.term.remoteExec(bytes(cmd, 'utf-8'), progrun2)
                 return True
