@@ -81,7 +81,8 @@ class Terminal(QtWidgets.QWidget):
             self._serial.close()
 
     def open(self, port, speed):
-        if self._serial is serial.Serial:
+        self._stopThread()
+        if type(self._serial) is serial.Serial:
             self._serial.close()
         try:
             self._serial = serial.Serial(port, speed, timeout=0.5)
@@ -98,20 +99,26 @@ class Terminal(QtWidgets.QWidget):
             self._serial.write(cmd_b[i:min(i + 256, len(cmd_b))])
             time.sleep(0.01)
 
-    def _startThread(self):
+    def _stopThread(self):
+        self._stop.set()
         if self._thread and self._thread.isAlive():
             self._thread.join()
             self._thread = None
+
+    def _startThread(self):
         self._stop.clear()
         self._thread = threading.Thread(target=self._readThread)
         self._thread.setDaemon(1)
         self._thread.start()
 
     def _readThread(self):
-        while not self._stop.isSet():
-            text = self._serial.read(self._serial.inWaiting() or 1)
-            if text:
-                self._workers = [w for w in self._workers if not w(text)]
+        try:
+            while not self._stop.is_set():
+                text = self._serial.read(self._serial.inWaiting() or 1)
+                if text:
+                    self._workers = [w for w in self._workers if not w(text)]
+        except Exception as e:
+            print(e)
 
     def _processText(self, text):
         self._stream.feed(text.decode(errors='ignore'))

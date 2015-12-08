@@ -4,7 +4,8 @@ This is the IDE for micropython on EDU-CIAA.
 
 #### Requeriments
 
- - PyQt & Python 2.7-3.X or PySide & Python 2.7
+ - Python 3.X
+ - PyQt or PySide
  - PyQode
  - PySerial
  - PyTE

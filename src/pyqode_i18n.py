@@ -45,7 +45,8 @@ _dict = {
         "Save File": "Guardar Archivo",
         "Open File": "Abrir Archivo",
         "Python files (*.py);;All files (*)": "Archivos Python (*.py);;"
-                                              "Todos los archivos (*)"
+                                              "Todos los archivos (*)",
+        "Serial Port:": "Puerto Serial:"
     }
 }
 

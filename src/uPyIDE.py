@@ -8,7 +8,6 @@ import glob
 import pyqode.python.backend.server as server
 import pyqode.python.widgets as widgets
 import pyqode.qt.QtCore as QtCore
-
 import pyqode.qt.QtWidgets as QtWidgets
 import pyqode_i18n
 import termWidget
@@ -37,10 +36,27 @@ def rccfile(path):
 
 
 class WidgetSpacer(QtWidgets.QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, wmax=None):
         super(WidgetSpacer, self).__init__(parent)
         self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
                            QtWidgets.QSizePolicy.Expanding)
+        if wmax:
+            self.setMaximumWidth(wmax)
+
+
+class PortSelector(QtWidgets.QComboBox):
+    def __init__(self, parent):
+        super(self.__class__, self).__init__(parent)
+        self.widget = parent
+        self.addItems(termWidget.serial_ports())
+        self.currentIndexChanged.connect(self.onChange)
+        self.setCurrentIndex(0)
+        self.onChange(0)
+
+    @QtCore.Slot(int)
+    def onChange(self, n):
+        if self.currentText():
+            self.widget.setPort(self.currentText())
 
 
 class SnipplerWidget(QtWidgets.QDockWidget):
@@ -138,12 +154,15 @@ class MainWindow(QtWidgets.QMainWindow):
         bar.addAction(icon("document-open"), i18n("Open"), self.fileOpen)
         bar.addAction(icon("document-save"), i18n("Save"), self.fileSave)
         bar.addWidget(WidgetSpacer(self))
+        bar.addWidget(QtWidgets.QLabel(i18n("Serial Port:")))
+        bar.addWidget(WidgetSpacer(self, 12))
+        bar.addWidget(PortSelector(self))
         bar.addAction(icon("run"), i18n("Run"), self.progRun)
         bar.addAction(icon("download"), i18n("Download"), self.progDownload)
         self.termAction = bar.addAction(icon("terminal"), i18n("Terminal"),
                                         self.openTerm)
         self.termAction.setCheckable(True)
-        self.termAction.setMenu(self.terminalMenu())
+        # self.termAction.setMenu(self.terminalMenu())
         self.addToolBar(bar)
 
     def terminalMenu(self):
