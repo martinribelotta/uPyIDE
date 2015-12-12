@@ -25,12 +25,12 @@ def i18n(s):
 
 
 def share():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'share', 'uPyIDE'))
+    return os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                        '..', 'share', 'uPyIDE'))
 
 
 def icon(name):
     path = os.path.join(share(), 'images', '{}.png'.format(name))
-    print(path)
     return QtWidgets.QIcon(path)
 
 
@@ -76,7 +76,7 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         item.setToolTip(contents)
 
     def loadSnippletFrom(self, inp):
-        xml = ElementTree.fromstring(inp) if type(inp) is str else  \
+        xml = ElementTree.fromstring(inp) if type(inp) is str else \
             ElementTree.parse(inp).getroot()
         for child in xml:
             self.addSnipplet(child.attrib["name"], child.text)
