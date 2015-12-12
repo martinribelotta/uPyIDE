@@ -25,12 +25,13 @@ def i18n(s):
 
 
 def share():
-    return os.path.join(os.path.dirname(__file__), '..', 'share', 'uPyIDE')
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'share', 'uPyIDE'))
 
 
 def icon(name):
-    return QtWidgets.QIcon(os.path.join(share(), 'images',
-                                        '{}.svg'.format(name)))
+    path = os.path.join(share(), 'images', '{}.png'.format(name))
+    print(path)
+    return QtWidgets.QIcon(path)
 
 
 class WidgetSpacer(QtWidgets.QWidget):
