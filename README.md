@@ -10,6 +10,13 @@ This is the IDE for micropython on EDU-CIAA.
  - PySerial
  - PyTE
 
+#### Requeriment instalation
+```bash
+pip install pyside pyqode.python pyserial pyte
+```
+
+Replace pip by pip3 or command of your distribution.
+
 ### Characteristics
 
   - Syntax higlight
