@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import tendo.singleton
-me = tendo.singleton.SingleInstance()
-
 import os
 import re
 import sys
@@ -16,6 +14,9 @@ import pyqode_i18n
 import termWidget
 import xml.etree.ElementTree as ElementTree
 
+
+me = tendo.singleton.SingleInstance()
+
 __version__ = '1.0'
 
 
@@ -28,16 +29,8 @@ def share():
 
 
 def icon(name):
-    return QtWidgets.QIcon(os.path.join(share(), 'images',  '{}.svg'.format(name)))
-
-
-def rccfile(path):
-    f = QtCore.QFile(path)
-    if not f.open(QtCore.QFile.ReadOnly):
-        return None
-    s = f.readAll()
-    f.close()
-    return s
+    return QtWidgets.QIcon(os.path.join(share(), 'images',
+                                        '{}.svg'.format(name)))
 
 
 class WidgetSpacer(QtWidgets.QWidget):
@@ -331,9 +324,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 return
         self._writeRemoteFile(self.editor.file.path)
 
+global app
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+    app.setQuitOnLastWindowClosed(True)
     with MainWindow():
         app.exec_()
 
