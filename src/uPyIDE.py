@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import tendo.singleton
+me = tendo.singleton.SingleInstance()
+
 import os
 import re
 import sys
@@ -13,8 +16,6 @@ import pyqode_i18n
 import termWidget
 import xml.etree.ElementTree as ElementTree
 
-import resources
-
 __version__ = '1.0'
 
 
@@ -22,8 +23,12 @@ def i18n(s):
     return pyqode_i18n.tr(s)
 
 
+def share():
+    return os.path.join(os.path.dirname(__file__), '..', 'share', 'uPyIDE')
+
+
 def icon(name):
-    return QtWidgets.QIcon(":/images/{}.svg".format(name))
+    return QtWidgets.QIcon(os.path.join(share(), 'images',  '{}.svg'.format(name)))
 
 
 def rccfile(path):
@@ -96,9 +101,9 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         self.snippletView.setStyleSheet('''QToolTip {
             font-family: "monospace";
         }''')
-        self.loadSnippletFrom(rccfile(':snipplets.xml').data().decode())
-        snipplet_glob = os.path.join(os.path.dirname(__file__), '..', 'share',
-                                     'snipplet', '*.py')
+        with open(os.path.join(share(), 'snipplet', 'snipplets.xml')) as f:
+            self.loadSnippletFrom(f)
+        snipplet_glob = os.path.join(share(), 'snipplet', '*.py')
         for source in glob.glob(snipplet_glob):
             self.loadCodeSnipplet(source)
 
@@ -333,5 +338,4 @@ def main():
         app.exec_()
 
 if __name__ == "__main__":
-    resources.__file__
     main()
