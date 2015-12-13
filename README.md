@@ -9,10 +9,11 @@ This is the IDE for micropython on EDU-CIAA.
  - PyQode
  - PySerial
  - PyTE
+ - tendo
 
 #### Requeriment instalation
 ```bash
-pip install pyside pyqode.python pyserial pyte
+pip install pyside pyqode.python pyserial pyte tendo
 ```
 
 Replace pip by pip3 or command of your distribution.

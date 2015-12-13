@@ -127,12 +127,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(800, 600)
         self.onListDir.connect(lambda l: self._showDir(l))
 
-    def __enter__(self):
-        self.show()
-
-    def __exit__(self, t, v, bt):
-        self.terminate()
-
     def i18n(self, actions=None):
         if not actions:
             actions = self.editor.actions()
@@ -189,6 +183,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     event.ignore()
             elif x == QtWidgets.QMessageBox.Cancel:
                 event.ignore()
+        if event.isAccepted():
+            self.terminate()
 
     def fileNew(self):
         if self.editor.dirty:
@@ -331,8 +327,9 @@ global app
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
-    with MainWindow():
-        app.exec_()
+    w = MainWindow()
+    w.show()
+    sys.exit(app.exec_())
 
 if __name__ == "__main__":
     main()
