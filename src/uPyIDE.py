@@ -107,8 +107,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
+        self.title = i18n("Edu CIAA MicroPython")
         self.cwd = QtCore.QDir.homePath()
-        self.setWindowTitle(i18n("Edu CIAA MicroPython"))
         self.editor = widgets.PyCodeEdit(server_script=server.__file__)
         self.term = termWidget.Terminal(self)
         self.outline = widgets.PyOutlineTreeWidget()
@@ -126,6 +126,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.i18n()
         self.resize(800, 600)
         self.onListDir.connect(lambda l: self._showDir(l))
+        self.editor.textChanged.connect(lambda: self.setWindowModified(True))
+        self.setWindowFileTitle('', False)
+
+    def setWindowFileTitle(self, path, modify):
+        self.setWindowTitle('[*] {} {}'.format(path, self.title))
+        QtCore.QTimer.singleShot(0, lambda: self.setWindowModified(modify))
 
     def i18n(self, actions=None):
         if not actions:
@@ -155,7 +161,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.termAction = bar.addAction(icon("terminal"), i18n("Terminal"),
                                         self.openTerm)
         self.termAction.setCheckable(True)
-        # self.termAction.setMenu(self.terminalMenu())
         self.addToolBar(bar)
 
     def terminalMenu(self):
@@ -195,6 +200,7 @@ class MainWindow(QtWidgets.QMainWindow):
             elif x == QtWidgets.QMessageBox.Cancel:
                 return
         self.editor.file.close()
+        self.setWindowFileTitle('', False)
 
     def dirtySaveDischartCancel(self):
         d = QtWidgets.QMessageBox()
@@ -231,6 +237,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if name:
             self.editor.file.open(name)
             self.cwd = os.path.dirname(name)
+            self.setWindowFileTitle(os.path.basename(name), False)
 
     def fileSave(self):
         if not self.editor.file.path:
@@ -242,6 +249,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not path:
             return False
         self.editor.file.save(path)
+        self.setWindowFileTitle(os.path.basename(path), False)
         return True
 
     def openTerm(self):
