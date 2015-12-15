@@ -46,7 +46,9 @@ _dict = {
         "Open File": "Abrir Archivo",
         "Python files (*.py);;All files (*)": "Archivos Python (*.py);;"
                                               "Todos los archivos (*)",
-        "Serial Port:": "Puerto Serial:"
+        "Serial Port:": "Puerto Serial:",
+        "NewFile.py (%d)": "Nuevo.py (%d)",
+        "Remote Name": "Nombre Remoto"
     }
 }
 

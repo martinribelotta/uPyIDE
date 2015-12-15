@@ -8,6 +8,7 @@ import glob
 
 import pyqode.python.backend.server as server
 import pyqode.python.widgets as widgets
+import pyqode.core.widgets as wcore
 import pyqode.qt.QtCore as QtCore
 import pyqode.qt.QtWidgets as QtWidgets
 import pyqode_i18n
@@ -68,7 +69,8 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         self.snippletView.itemDoubleClicked.connect(self._insertToParent)
 
     def _insertToParent(self, item):
-        self.parent().editor.insertPlainText(item.toolTip())
+        if self.parent().tabber.active_editor:
+            self.parent().tabber.active_editor.insertPlainText(item.toolTip())
 
     def addSnipplet(self, description, contents):
         item = QtWidgets.QListWidgetItem(self.snippletView)
@@ -107,35 +109,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        self.title = i18n("Edu CIAA MicroPython")
+        self.setWindowTitle(i18n("Edu CIAA MicroPython"))
         self.cwd = QtCore.QDir.homePath()
-        self.editor = widgets.PyCodeEdit(server_script=server.__file__)
+        self.tabber = wcore.TabWidget(self)
         self.term = termWidget.Terminal(self)
         self.outline = widgets.PyOutlineTreeWidget()
-        self.outline.set_editor(self.editor)
         self.dock_outline = QtWidgets.QDockWidget(i18n('Outline'))
         self.dock_outline.setWidget(self.outline)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_outline)
         self.snippler = SnipplerWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.snippler)
         self.stack = QtWidgets.QStackedWidget(self)
-        self.stack.addWidget(self.editor)
+        self.stack.addWidget(self.tabber)
         self.stack.addWidget(self.term)
         self.setCentralWidget(self.stack)
         self.makeAppToolBar()
-        self.i18n()
         self.resize(800, 600)
         self.onListDir.connect(lambda l: self._showDir(l))
-        self.editor.textChanged.connect(lambda: self.setWindowModified(True))
-        self.setWindowFileTitle('', False)
+        self.tabber.currentChanged.connect(self.actualizeOutline)
+        self.fileNew()
 
-    def setWindowFileTitle(self, path, modify):
-        self.setWindowTitle('[*] {} {}'.format(path, self.title))
-        QtCore.QTimer.singleShot(0, lambda: self.setWindowModified(modify))
+    def actualizeOutline(self, n):
+        self.outline.set_editor(self.tabber.active_editor)
+        self.i18n()
 
     def i18n(self, actions=None):
+        if not self.tabber.active_editor:
+            return
         if not actions:
-            actions = self.editor.actions()
+            actions = self.tabber.active_editor.actions()
         for action in actions:
             if not action.isSeparator():
                 action.setText(pyqode_i18n.tr(action.text()))
@@ -144,7 +146,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def terminate(self):
         self.term.close()
-        self.editor.backend.stop()
 
     def makeAppToolBar(self):
         bar = QtWidgets.QToolBar(self)
@@ -180,27 +181,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.term.open(port, 115200)
 
     def closeEvent(self, event):
-        event.accept()
-        if self.editor.dirty:
-            x = self.dirtySaveDischartCancel()
-            if x == QtWidgets.QMessageBox.Save:
-                if not self.fileSave():
-                    event.ignore()
-            elif x == QtWidgets.QMessageBox.Cancel:
-                event.ignore()
+        self.tabber.closeEvent(event)
         if event.isAccepted():
             self.terminate()
 
     def fileNew(self):
-        if self.editor.dirty:
-            x = self.dirtySaveDischartCancel()
-            if x == QtWidgets.QMessageBox.Save:
-                if not self.fileSave():
-                    return
-            elif x == QtWidgets.QMessageBox.Cancel:
-                return
-        self.editor.file.close()
-        self.setWindowFileTitle('', False)
+        code_edit = widgets.PyCodeEdit(server_script=server.__file__)
+        i = self.tabber.add_code_edit(code_edit, i18n("NewFile.py (%d)"))
+        self.tabber.setCurrentIndex(i)
 
     def dirtySaveDischartCancel(self):
         d = QtWidgets.QMessageBox()
@@ -224,31 +212,28 @@ class MainWindow(QtWidgets.QMainWindow):
         return d.exec_()
 
     def fileOpen(self):
-        if self.editor.dirty:
-            x = self.dirtySaveDischartCancel()
-            if x == QtWidgets.QMessageBox.Save:
-                if not self.fileSave():
-                    return
-            elif x == QtWidgets.QMessageBox.Cancel:
-                return
         name, dummy = QtWidgets.QFileDialog.getOpenFileName(
             self, i18n("Open File"), self.cwd,
             i18n("Python files (*.py);;All files (*)"))
         if name:
-            self.editor.file.open(name)
+            code_edit = widgets.PyCodeEdit(server_script=server.__file__)
+            code_edit.file.open(name)
+            i = self.tabber.add_code_edit(code_edit)
+            self.tabber.setCurrentIndex(i)
             self.cwd = os.path.dirname(name)
-            self.setWindowFileTitle(os.path.basename(name), False)
 
     def fileSave(self):
-        if not self.editor.file.path:
+        if not self.tabber.active_editor:
+            return False
+        if not self.tabber.active_editor.file.path:
             path, dummy = QtWidgets.QFileDialog.getSaveFileName(
                 self, i18n("Save File"), self.cwd,
                 i18n("Python files (*.py);;All files (*)"))
         else:
-            path = self.editor.file.path
+            path = self.tabber.active_editor.file.path
         if not path:
             return False
-        self.editor.file.save(path)
+        self.tabber.active_editor.file.save(path)
         self.setWindowFileTitle(os.path.basename(path), False)
         return True
 
@@ -261,7 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.stack.setCurrentIndex(0)
 
     def progRun(self):
-        self._targetExec(self.editor.toPlainText())
+        self._targetExec(self.tabber.active_editor.toPlainText())
         self.termAction.setChecked(True)
         self.openTerm()
 
@@ -311,23 +296,27 @@ class MainWindow(QtWidgets.QMainWindow):
     def _writeRemoteFile(self, local_name):
         def finished(raw):
             print('_writeRemoteFile terminated: ', raw)
-        remote_name = '/flash/{}'.format(os.path.basename(local_name))
-        with open(local_name, 'rb') as f:
-            data = base64.b16encode(f.read())
+        name = os.path.basename(local_name)
+        name, ok = QtWidgets.QInputDialog.getText(self, i18n("Download"),
+                                                  i18n("Remote Name"),
+                                                  text=name)
+        if not ok:
+            return
+        remote_name = '/flash/{}'.format(name)
+        if os.path.exists(local_name):
+            with open(local_name, 'rb') as f:
+                data = base64.b16encode(f.read())
+        else:
+            data = self.tabber.active_editor.toPlainText()
         cmd = "import ubinascii\r" \
-              "with open('{}', 'wb') as f:\r" \
+              "with open(\"{}\", 'wb') as f:\r" \
               "    f.write(ubinascii.unhexlify({}))".format(remote_name, data)
         print("Writing remote to ", remote_name, data)
         print("--------------\n", cmd, "\n--------------")
         self._targetExec(cmd, finished)
 
     def progDownload(self):
-        if not self.editor.file.path:
-            if self.dirtySaveCancel() == QtWidgets.QMessageBox.Cancel:
-                return
-            if not self.fileSave():
-                return
-        self._writeRemoteFile(self.editor.file.path)
+        self._writeRemoteFile(self.tabber.active_editor.file.path)
 
 global app
 
