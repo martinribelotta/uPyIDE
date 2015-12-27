@@ -324,8 +324,16 @@ global app
 def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
-    w = MainWindow()
-    w.show()
+    splash = QtWidgets.QSplashScreen()
+    splash.setPixmap(QtWidgets.QPixmap(os.path.join(share(), 'images',
+                                                    'splash.png')))
+    splash.show()
+
+    def do_app():
+        splash.close()
+        w = MainWindow()
+        w.show()
+    QtCore.QTimer.singleShot(2000, do_app)
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
