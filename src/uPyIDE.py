@@ -36,12 +36,12 @@ def icon(name):
 
 
 def completion_server():
-    server_path = os.path.join(share(), '..', '..', 'bin', 'server.exe')
-    print(server_path)
-    if os.path.isfile(server_path):
-        return server_path
-    else:
-        return server.__file__
+    #server_path = os.path.join(share(), '..', '..', 'bin', 'server.exe')
+    #print(server_path)
+    #if os.path.isfile(server_path):
+    #    return server_path
+    #else:
+    return server.__file__
 
 
 class WidgetSpacer(QtWidgets.QWidget):
@@ -67,7 +67,7 @@ class PortSelector(QtWidgets.QComboBox):
         if self.currentText():
             port = self.currentText()
             if re.match(r'COM\d+', port):
-                self.widget.setPort(int(port[4:]) - 1)
+                self.widget.setPort(int(port[3:]) - 1)
             elif port.startWith('/dev'):
                 self.widget.setPort(self.currentText())
             else:
