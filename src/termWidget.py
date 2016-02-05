@@ -8,6 +8,7 @@ import time
 
 import pyqode.qt.QtWidgets as QtWidgets
 import pyqode.qt.QtCore as QtCore
+import pyqode.qt.QtGui as QtGui
 
 
 def serial_ports():
@@ -46,7 +47,7 @@ class Terminal(QtWidgets.QWidget):
         Constructor
         '''
         super(self.__class__, self).__init__(parent)
-        self.setFont(QtWidgets.QFont({
+        self.setFont(QtGui.QFont({
             'win32': 'Consolas',
             'linux': 'Monospace',
             'darwin': 'Andale Mono'
@@ -126,7 +127,7 @@ class Terminal(QtWidgets.QWidget):
         return False
 
     def paintEvent(self, event):
-        p = QtWidgets.QPainter()
+        p = QtGui.QPainter()
         p.begin(self)
         pal = self.palette()
         p.fillRect(QtCore.QRect(QtCore.QPoint(), self.size()),
@@ -141,7 +142,7 @@ class Terminal(QtWidgets.QWidget):
         p.end()
 
     def textRect(self, text):
-        textSize = QtWidgets.QFontMetrics(self.font()).size(0, text)
+        textSize = QtGui.QFontMetrics(self.font()).size(0, text)
         return QtCore.QRect(QtCore.QPoint(), textSize)
 
     def cursorRect(self):

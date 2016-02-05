@@ -59,10 +59,8 @@ class PortSelector(QtWidgets.QComboBox):
             port = self.currentText()
             if re.match(r'COM\d+', port):
                 self.widget.setPort(int(port[4:]) - 1)
-            elif port.startWith('/dev'):
-                self.widget.setPort(self.currentText())
             else:
-                print("Port {} not recognized".format(port))
+                self.widget.setPort(self.currentText())
 
 
 class SnipplerWidget(QtWidgets.QDockWidget):
