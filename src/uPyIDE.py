@@ -11,6 +11,7 @@ import pyqode.python.widgets as widgets
 import pyqode.core.widgets as wcore
 import pyqode.qt.QtCore as QtCore
 import pyqode.qt.QtWidgets as QtWidgets
+import pyqode.qt.QtGui as QtGui
 import pyqode_i18n
 import termWidget
 import xml.etree.ElementTree as ElementTree
@@ -32,7 +33,7 @@ def share():
 
 def icon(name):
     path = os.path.join(share(), 'images', '{}.png'.format(name))
-    return QtWidgets.QIcon(path)
+    return QtGui.QIcon(path)
 
 
 class WidgetSpacer(QtWidgets.QWidget):
@@ -329,7 +330,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
     splash = QtWidgets.QSplashScreen()
-    splash.setPixmap(QtWidgets.QPixmap(os.path.join(share(), 'images',
+    splash.setPixmap(QtGui.QPixmap(os.path.join(share(), 'images',
                                                     'splash.png')))
     splash.show()
 
