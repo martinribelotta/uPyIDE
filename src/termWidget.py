@@ -88,8 +88,10 @@ class Terminal(QtWidgets.QWidget):
         try:
             self._serial = serial.Serial(port, speed, timeout=0.5)
             self._startThread()
+            return True
         except serial.SerialException as e:
             print(e)
+            return False
 
     def remoteExec(self, cmd, interceptor=None):
         if interceptor:

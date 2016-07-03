@@ -52,7 +52,7 @@ class PortSelector(QtWidgets.QComboBox):
         self.addItems(termWidget.serial_ports())
         self.currentIndexChanged.connect(self.onChange)
         self.setCurrentIndex(0)
-        self.onChange(0)
+        # self.onChange(0)
 
     @QtCore.Slot(int)
     def onChange(self, n):
@@ -133,6 +133,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.onListDir.connect(lambda l: self._showDir(l))
         self.tabber.currentChanged.connect(self.actualizeOutline)
         self.fileNew()
+        self.portSelector.onChange(0)
 
     def actualizeOutline(self, n):
         self.outline.set_editor(self.tabber.active_editor)
@@ -161,11 +162,17 @@ class MainWindow(QtWidgets.QMainWindow):
         bar.addWidget(WidgetSpacer(self))
         bar.addWidget(QtWidgets.QLabel(i18n("Serial Port:")))
         bar.addWidget(WidgetSpacer(self, 12))
-        bar.addWidget(PortSelector(self))
-        bar.addAction(icon("run"), i18n("Run"), self.progRun)
-        bar.addAction(icon("download"), i18n("Download"), self.progDownload)
+        self.portSelector = PortSelector(self)
+        bar.addWidget(self.portSelector)
+        self.portSelector.setToolTip(i18n("Select Serial Port"))
+        self.runAction = bar.addAction(icon("run"), i18n("Run"), self.progRun)
+        self.runAction.setEnabled(False)
+        self.dlAction = bar.addAction(icon("download"), i18n("Download"),
+                                      self.progDownload)
+        self.dlAction.setEnabled(False)
         self.termAction = bar.addAction(icon("terminal"), i18n("Terminal"),
                                         self.openTerm)
+        self.termAction.setEnabled(False)
         self.termAction.setCheckable(True)
         self.addToolBar(bar)
 
@@ -183,7 +190,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return m
 
     def setPort(self, port):
-        self.term.open(port, 115200)
+        en = self.term.open(port, 115200)
+        [i.setEnabled(en) for i in (self.dlAction,
+                                    self.runAction,
+                                    self.termAction)]
 
     def closeEvent(self, event):
         self.tabber.closeEvent(event)
@@ -331,7 +341,7 @@ def main():
     app.setQuitOnLastWindowClosed(True)
     splash = QtWidgets.QSplashScreen()
     splash.setPixmap(QtGui.QPixmap(os.path.join(share(), 'images',
-                                                    'splash.png')))
+                                                'splash.png')))
     splash.show()
 
     def do_app():

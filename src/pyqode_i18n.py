@@ -48,7 +48,8 @@ _dict = {
                                               "Todos los archivos (*)",
         "Serial Port:": "Puerto Serial:",
         "NewFile.py (%d)": "Nuevo.py (%d)",
-        "Remote Name": "Nombre Remoto"
+        "Remote Name": "Nombre Remoto",
+        "Select Serial Port": "Seleccionar Puerto Serie"
     }
 }
 
