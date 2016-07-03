@@ -36,6 +36,15 @@ def icon(name):
     return QtGui.QIcon(path)
 
 
+def completion_server():
+    #server_path = os.path.join(share(), '..', '..', 'bin', 'server.exe')
+    #print(server_path)
+    #if os.path.isfile(server_path):
+    #    return server_path
+    #else:
+    return server.__file__
+
+
 class WidgetSpacer(QtWidgets.QWidget):
     def __init__(self, parent, wmax=None):
         super(WidgetSpacer, self).__init__(parent)
@@ -59,7 +68,7 @@ class PortSelector(QtWidgets.QComboBox):
         if self.currentText():
             port = self.currentText()
             if re.match(r'COM\d+', port):
-                self.widget.setPort(int(port[4:]) - 1)
+                self.widget.setPort(int(port[3:]) - 1)
             else:
                 self.widget.setPort(self.currentText())
 
@@ -201,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.terminate()
 
     def fileNew(self):
-        code_edit = widgets.PyCodeEdit(server_script=server.__file__)
+        code_edit = widgets.PyCodeEdit(server_script=completion_server())
         i = self.tabber.add_code_edit(code_edit, i18n("NewFile.py (%d)"))
         self.tabber.setCurrentIndex(i)
 
