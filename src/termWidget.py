@@ -128,6 +128,12 @@ class Terminal(QtWidgets.QWidget):
         self.update()
         return False
 
+    def focusInEvent(self, event):
+        self.repaint()
+
+    def focusOutEvent(self, event):
+        self.repaint()
+
     def paintEvent(self, event):
         p = QtGui.QPainter()
         p.begin(self)
@@ -140,7 +146,10 @@ class Terminal(QtWidgets.QWidget):
         for line in self._vt.display:
             p.drawText(bound, flags, line)
             bound.translate(0, bound.height())
-        p.fillRect(self.cursorRect(), pal.color(pal.Foreground))
+        if self.hasFocus():
+            p.fillRect(self.cursorRect(), pal.color(pal.Foreground))
+        else:
+            p.drawRect(self.cursorRect())
         p.end()
 
     def textRect(self, text):

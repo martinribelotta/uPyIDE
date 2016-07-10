@@ -15,6 +15,7 @@ import pyqode.qt.QtGui as QtGui
 import pyqode_i18n
 import termWidget
 import xml.etree.ElementTree as ElementTree
+from docutils.parsers.rst.directives import path
 
 
 me = tendo.singleton.SingleInstance()
@@ -37,11 +38,11 @@ def icon(name):
 
 
 def completion_server():
-    #server_path = os.path.join(share(), '..', '..', 'bin', 'server.exe')
-    #print(server_path)
-    #if os.path.isfile(server_path):
+    # server_path = os.path.join(share(), '..', '..', 'bin', 'server.exe')
+    # print(server_path)
+    # if os.path.isfile(server_path):
     #    return server_path
-    #else:
+    # else:
     return server.__file__
 
 
@@ -220,8 +221,8 @@ class MainWindow(QtWidgets.QMainWindow):
         d.setText(i18n("Document was modify"))
         d.setInformativeText(i18n("Save changes?"))
         d.setIcon(QtWidgets.QMessageBox.Question)
-        d.setStandardButtons(QtWidgets.QMessageBox.Save |
-                             QtWidgets.QMessageBox.Discard |
+        d.setStandardButtons(QtWidgets.QMessageBox.Save | 
+                             QtWidgets.QMessageBox.Discard | 
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
@@ -231,7 +232,7 @@ class MainWindow(QtWidgets.QMainWindow):
         d.setText(i18n("Document was modify"))
         d.setInformativeText(i18n("Save changes?"))
         d.setIcon(QtWidgets.QMessageBox.Question)
-        d.setStandardButtons(QtWidgets.QMessageBox.Save |
+        d.setStandardButtons(QtWidgets.QMessageBox.Save | 
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
@@ -247,18 +248,23 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cwd = os.path.dirname(name)
 
     def fileSave(self):
-        if not self.tabber.active_editor:
+        ed = self.tabber.active_editor
+        if not ed:
             return False
-        if not self.tabber.active_editor.file.path:
-            path, dummy = QtWidgets.QFileDialog.getSaveFileName(
-                self, i18n("Save File"), self.cwd,
-                i18n("Python files (*.py);;All files (*)"))
+        is_new = ed.file.path.startswith(i18n('NewFile.py (%d)')
+                                         .replace(' (%d)', ''))
+        if not ed.file.path or is_new:
+            path, dummy = QtWidgets.QFileDialog. \
+                getSaveFileName(self, i18n("Save File"), self.cwd,
+                                i18n("Python files (*.py);;All files (*)"))
         else:
-            path = self.tabber.active_editor.file.path
+            path = ed.file.path
         if not path:
             return False
-        self.tabber.active_editor.file.save(path)
-        self.setWindowFileTitle(os.path.basename(path), False)
+        old = self.tabber.currentIndex()
+        self.tabber.setCurrentWidget(ed)
+        self.tabber.save_current(path)
+        self.tabber.setCurrentIndex(old)
         return True
 
     def openTerm(self):
