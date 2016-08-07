@@ -26,9 +26,15 @@ __version__ = '1.0'
 def i18n(s):
     return pyqode_i18n.tr(s)
 
+    
+def executable_path():
+    if hasattr(sys, 'frozen'):
+        return os.path.dirname(sys.executable)
+    else:
+        return os.path.dirname(sys.argv[0])
 
 def share():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__),
+    return os.path.abspath(os.path.join(executable_path(),
                                         '..', 'share', 'uPyIDE'))
 
 
@@ -37,13 +43,20 @@ def icon(name):
     return QtGui.QIcon(path)
 
 
+def backend_interpreter():
+    if getattr( sys, 'frozen', False ) :
+        return ''
+    else:
+        return sys.executable
+
+
 def completion_server():
-    # server_path = os.path.join(share(), '..', '..', 'bin', 'server.exe')
-    # print(server_path)
-    # if os.path.isfile(server_path):
-    #    return server_path
-    # else:
-    return server.__file__
+    if getattr( sys, 'frozen', False ) :
+        server_path = os.path.join(executable_path(), 'server.exe')
+        print(server_path)
+        return server_path
+    else:
+        return server.__file__
 
 
 class WidgetSpacer(QtWidgets.QWidget):
@@ -210,7 +223,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.terminate()
 
     def fileNew(self):
-        code_edit = widgets.PyCodeEdit(server_script=completion_server())
+        code_edit = widgets.PyCodeEdit(interpreter=backend_interpreter(),
+                                       server_script=completion_server())
         i = self.tabber.add_code_edit(code_edit, i18n("NewFile.py (%d)"))
         self.tabber.setCurrentIndex(i)
 
