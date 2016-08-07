@@ -1,0 +1,5 @@
+PySide
+pyqode.python
+pyserial
+pyte
+tendo

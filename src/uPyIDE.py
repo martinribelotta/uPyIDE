@@ -59,7 +59,9 @@ class PortSelector(QtWidgets.QComboBox):
     def __init__(self, parent):
         super(self.__class__, self).__init__(parent)
         self.widget = parent
-        self.addItems(termWidget.serial_ports())
+        portList = termWidget.serial_ports()
+        print(portList)
+        self.addItems(portList)
         self.currentIndexChanged.connect(self.onChange)
         self.setCurrentIndex(0)
         # self.onChange(0)
@@ -68,10 +70,7 @@ class PortSelector(QtWidgets.QComboBox):
     def onChange(self, n):
         if self.currentText():
             port = self.currentText()
-            if re.match(r'COM\d+', port):
-                self.widget.setPort(int(port[3:]) - 1)
-            else:
-                self.widget.setPort(self.currentText())
+            self.widget.setPort(port)
 
 
 class SnipplerWidget(QtWidgets.QDockWidget):

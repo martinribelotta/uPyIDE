@@ -140,7 +140,7 @@ class Terminal(QtWidgets.QWidget):
         pal = self.palette()
         p.fillRect(QtCore.QRect(QtCore.QPoint(), self.size()),
                    pal.color(pal.Background))
-        textSize = self.textRect(' ' * self._vt.size[1]).size()
+        textSize = self.textRect(' ' * self._vt.columns).size()
         bound = QtCore.QRect(QtCore.QPoint(), textSize)
         flags = QtCore.Qt.AlignLeft | QtCore.Qt.AlignBottom
         for line in self._vt.display:
