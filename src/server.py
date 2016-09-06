@@ -20,7 +20,7 @@ for writing your own server.
 import argparse
 import logging
 import sys
-
+import inspect
 
 if __name__ == '__main__':
     """
@@ -43,6 +43,11 @@ if __name__ == '__main__':
     from pyqode.core import backend
     from pyqode.python.backend.workers import JediCompletionProvider
 
+    try:
+        import pyb as fake_pyb
+        sys.path.append(inspect.getfile(fake_pyb))
+    except:
+        pass
     # setup completion providers
     backend.CodeCompletionWorker.providers.append(JediCompletionProvider())
     backend.CodeCompletionWorker.providers.append(

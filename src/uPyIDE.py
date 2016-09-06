@@ -26,12 +26,13 @@ __version__ = '1.0'
 def i18n(s):
     return pyqode_i18n.tr(s)
 
-    
+
 def executable_path():
     if hasattr(sys, 'frozen'):
         return os.path.dirname(sys.executable)
     else:
         return os.path.dirname(sys.argv[0])
+
 
 def share():
     return os.path.abspath(os.path.join(executable_path(),
@@ -44,14 +45,14 @@ def icon(name):
 
 
 def backend_interpreter():
-    if getattr( sys, 'frozen', False ) :
+    if getattr(sys, 'frozen', False):
         return ''
     else:
         return sys.executable
 
 
 def completion_server():
-    if getattr( sys, 'frozen', False ) :
+    if getattr(sys, 'frozen', False):
         server_path = os.path.join(executable_path(), 'server.exe')
         print(server_path)
         return server_path
@@ -234,8 +235,8 @@ class MainWindow(QtWidgets.QMainWindow):
         d.setText(i18n("Document was modify"))
         d.setInformativeText(i18n("Save changes?"))
         d.setIcon(QtWidgets.QMessageBox.Question)
-        d.setStandardButtons(QtWidgets.QMessageBox.Save | 
-                             QtWidgets.QMessageBox.Discard | 
+        d.setStandardButtons(QtWidgets.QMessageBox.Save |
+                             QtWidgets.QMessageBox.Discard |
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
@@ -245,7 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
         d.setText(i18n("Document was modify"))
         d.setInformativeText(i18n("Save changes?"))
         d.setIcon(QtWidgets.QMessageBox.Question)
-        d.setStandardButtons(QtWidgets.QMessageBox.Save | 
+        d.setStandardButtons(QtWidgets.QMessageBox.Save |
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
