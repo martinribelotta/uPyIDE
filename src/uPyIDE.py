@@ -5,6 +5,7 @@ import re
 import sys
 import base64
 import glob
+import collections
 
 import pyqode.python.backend.server as server
 import pyqode.python.widgets as widgets
@@ -15,7 +16,10 @@ import pyqode.qt.QtGui as QtGui
 import pyqode_i18n
 import termWidget
 import xml.etree.ElementTree as ElementTree
-from docutils.parsers.rst.directives import path
+
+import markdown
+
+# from docutils.parsers.rst.directives import path
 
 
 me = tendo.singleton.SingleInstance()
@@ -26,12 +30,13 @@ __version__ = '1.0'
 def i18n(s):
     return pyqode_i18n.tr(s)
 
-    
+
 def executable_path():
     if hasattr(sys, 'frozen'):
         return os.path.dirname(sys.executable)
     else:
         return os.path.dirname(sys.argv[0])
+
 
 def share():
     return os.path.abspath(os.path.join(executable_path(),
@@ -44,14 +49,14 @@ def icon(name):
 
 
 def backend_interpreter():
-    if getattr( sys, 'frozen', False ) :
+    if getattr(sys, 'frozen', False):
         return ''
     else:
         return sys.executable
 
 
 def completion_server():
-    if getattr( sys, 'frozen', False ) :
+    if getattr(sys, 'frozen', False):
         server_path = os.path.join(executable_path(), 'server.exe')
         print(server_path)
         return server_path
@@ -196,7 +201,35 @@ class MainWindow(QtWidgets.QMainWindow):
                                         self.openTerm)
         self.termAction.setEnabled(False)
         self.termAction.setCheckable(True)
+        bar.addAction(icon("about"), i18n("Help"), self.showhelp)
         self.addToolBar(bar)
+
+    def _htmlhelp(self):
+        return os.path.abspath(os.path.join(share(), 'help.html'))
+
+    def _mdhelp(self):
+        return os.path.abspath(os.path.join(share(), 'help.md'))
+
+    def _cssfile(self):
+        return os.path.abspath(os.path.join(share(), 'help.css'))
+
+    def showhelp(self):
+        dlg = QtWidgets.QDialog(self)
+        tv = QtWidgets.QTextBrowser(dlg)
+        with open(self._cssfile()) as f:
+            tv.document().setDefaultStyleSheet(f.read())
+        try:
+            with open(self._mdhelp()) as f:
+                tv.document().setHtml(markdown.markdown(f.read()))
+        except:
+            try:
+                with open(self._htmlhelp()) as f:
+                    tv.document().setHtml(f.read())
+            except:
+                tv.setHtml("No help")
+        l = QtWidgets.QHBoxLayout(dlg)
+        l.addWidget(tv)
+        dlg.exec_()
 
     def terminalMenu(self):
         m = QtWidgets.QMenu(self)
@@ -234,8 +267,8 @@ class MainWindow(QtWidgets.QMainWindow):
         d.setText(i18n("Document was modify"))
         d.setInformativeText(i18n("Save changes?"))
         d.setIcon(QtWidgets.QMessageBox.Question)
-        d.setStandardButtons(QtWidgets.QMessageBox.Save | 
-                             QtWidgets.QMessageBox.Discard | 
+        d.setStandardButtons(QtWidgets.QMessageBox.Save |
+                             QtWidgets.QMessageBox.Discard |
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
@@ -245,7 +278,7 @@ class MainWindow(QtWidgets.QMainWindow):
         d.setText(i18n("Document was modify"))
         d.setInformativeText(i18n("Save changes?"))
         d.setIcon(QtWidgets.QMessageBox.Question)
-        d.setStandardButtons(QtWidgets.QMessageBox.Save | 
+        d.setStandardButtons(QtWidgets.QMessageBox.Save |
                              QtWidgets.QMessageBox.Cancel)
         return d.exec_()
 
@@ -299,7 +332,7 @@ class MainWindow(QtWidgets.QMainWindow):
             progrun2.text += text
             if progrun2.text.endswith(b'\x04>'):
                 # print("{} {}".format(5, progrun2.text))
-                if callable(continuation):
+                if isinstance(continuation, collections.Callable):
                     continuation(progrun2.text)
                 return True
             return False
@@ -322,7 +355,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def showDir(self):
         def finished(raw):
             text = ''.join(re.findall(r"(\[.*?\])", raw.decode()))
-            print(raw, text)
+            print((raw, text))
             self.onListDir.emit(text)
         self._targetExec('print(os.listdir())', finished)
 
@@ -338,7 +371,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _writeRemoteFile(self, local_name):
         def finished(raw):
-            print('_writeRemoteFile terminated: ', raw)
+            print(('_writeRemoteFile terminated: ', raw))
         name = os.path.basename(local_name)
         name, ok = QtWidgets.QInputDialog.getText(self, i18n("Download"),
                                                   i18n("Remote Name"),
@@ -348,14 +381,13 @@ class MainWindow(QtWidgets.QMainWindow):
         remote_name = '/flash/{}'.format(name)
         if os.path.exists(local_name):
             with open(local_name, 'rb') as f:
-                data = base64.b16encode(f.read())
+                data = f.read()
         else:
             data = self.tabber.active_editor.toPlainText()
-        cmd = "import ubinascii\r" \
-              "with open(\"{}\", 'wb') as f:\r" \
-              "    f.write(ubinascii.unhexlify({}))".format(remote_name, data)
-        print("Writing remote to ", remote_name, data)
-        print("--------------\n", cmd, "\n--------------")
+        cmd = "with open(\"{}\", 'wb') as f:\r" \
+              "    f.write({})".format(remote_name, repr(data))
+        print(("Writing remote to ", remote_name, repr(data)))
+        print(("--------------\n", cmd, "\n--------------"))
         self._targetExec(cmd, finished)
 
     def progDownload(self):
