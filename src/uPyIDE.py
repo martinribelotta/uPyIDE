@@ -3,7 +3,6 @@ import tendo.singleton
 import os
 import re
 import sys
-import base64
 import glob
 import collections
 
@@ -41,6 +40,10 @@ def executable_path():
 def share():
     return os.path.abspath(os.path.join(executable_path(),
                                         '..', 'share', 'uPyIDE'))
+
+
+def fakelibs():
+    return os.path.join(share(), 'fakelibs')
 
 
 def icon(name):
@@ -255,9 +258,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if event.isAccepted():
             self.terminate()
 
+    def createEditor(self):
+        return widgets.PyCodeEdit(interpreter=backend_interpreter(),
+            server_script=completion_server(),
+            args=['-s', fakelibs()])
+
     def fileNew(self):
-        code_edit = widgets.PyCodeEdit(interpreter=backend_interpreter(),
-                                       server_script=completion_server())
+        code_edit = self.createEditor()
         i = self.tabber.add_code_edit(code_edit, i18n("NewFile.py (%d)"))
         self.tabber.setCurrentIndex(i)
 
@@ -287,7 +294,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self, i18n("Open File"), self.cwd,
             i18n("Python files (*.py);;All files (*)"))
         if name:
-            code_edit = widgets.PyCodeEdit(server_script=server.__file__)
+            code_edit = self.createEditor()
             code_edit.file.open(name)
             i = self.tabber.add_code_edit(code_edit)
             self.tabber.setCurrentIndex(i)

@@ -2,7 +2,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "uPyIDE"
-!define PRODUCT_VERSION "1.0-rc1"
+!define PRODUCT_VERSION "1.0-rc2"
 !define PRODUCT_PUBLISHER "None"
 !define PRODUCT_WEB_SITE "https://github.com/martinribelotta/uPyIDE"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\EjecutablePrincipal.exe"
