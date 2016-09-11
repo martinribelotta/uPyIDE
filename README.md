@@ -12,11 +12,27 @@ This is the IDE for micropython on EDU-CIAA.
  - tendo
 
 #### Requeriment instalation
+
+On ubuntu and derivates, this require python3, cmake, qt4-qmake, libqt4-core
+and libqt4-gui installed into the system. You can install all with:
+
+```bash
+sudo apt-get install python3 cmake qt4-qmake libqt4-core libqt4-gui
+```
+
 ```bash
 pip install pyside pyqode.python pyserial pyte tendo
 ```
 
 Replace pip by pip3 or command of your distribution.
+
+In Ubuntu, PySide can fail to compile. At this case you can use PyQt4 and
+others packages from official repositories
+
+```bash
+sudo apt-get install python3 python3-qt4
+sudo pip3 install pyserial tendo pyte pyqode.python markdown
+```
 
 ### Characteristics
 
