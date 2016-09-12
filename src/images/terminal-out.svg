@@ -15,7 +15,7 @@
    id="svg5453"
    version="1.1"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="terminal.svg">
+   sodipodi:docname="terminal-out.svg">
   <defs
      id="defs5455">
     <marker
@@ -186,7 +186,7 @@
        xlink:href="#linearGradient4823"
        id="linearGradient4612-2"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(2.4545454,0,0,3.6533464,335.22877,409.65714)"
+       gradientTransform="matrix(2.4545454,0,0,3.6533464,335.48159,411.42457)"
        x1="32"
        y1="27"
        x2="38"
@@ -199,9 +199,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:zoom="8.9375"
-     inkscape:cx="27.854803"
-     inkscape:cy="13.732333"
+     inkscape:zoom="12.639534"
+     inkscape:cx="20.438143"
+     inkscape:cy="34.369921"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -316,7 +316,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -335,9 +335,9 @@
     <path
        inkscape:connector-curvature="0"
        style="display:inline;opacity:0.2;fill:url(#linearGradient4612-2);fill-opacity:1;stroke:none"
-       d="m 417.39342,504.6991 -7.00336,7.40997 17.12269,17.25297 4.39528,-1.38222 3.41058,-3.46853 -0.5136,-2.41849 -10.588,-11.56697 -0.27747,0.71266 z"
+       d="m 422.52666,510.27722 -4.62183,1.70686 -7.57842,1.45728 2.64799,1.97077 6.81533,0 -3.32419,3.15992 12.24943,11.8454 3.44588,-0.67017 3.41058,-3.46853 -6.94736,-9.65748 z"
        id="path4608-1"
-       sodipodi:nodetypes="ccccccccc" />
+       sodipodi:nodetypes="ccccccccccc" />
     <path
        style="fill:url(#linearGradient4545);fill-rule:evenodd;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1;opacity:0.2"
        d="M 14 14 L 14 18 L 16 20 L 8 20 L 14 26 L 8 26 L 16 34 L 30 34 L 40 34 L 20 14 L 18 14 L 18 18 L 14 14 z "
@@ -377,7 +377,8 @@
        id="rect4557"
        style="opacity:1;fill:url(#linearGradient4559);fill-opacity:1;stroke:none" />
     <g
-       id="g4902">
+       id="g4902"
+       transform="matrix(-1,0,0,1,834.61483,0)">
       <path
          inkscape:connector-curvature="0"
          id="path4752"

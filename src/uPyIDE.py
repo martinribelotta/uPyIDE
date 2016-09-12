@@ -67,6 +67,10 @@ def completion_server():
         return server.__file__
 
 
+def about_pixmap():
+    return QtGui.QPixmap(os.path.join(share(), 'images', 'splash.png'))
+
+
 class WidgetSpacer(QtWidgets.QWidget):
     def __init__(self, parent, wmax=None):
         super(WidgetSpacer, self).__init__(parent)
@@ -218,7 +222,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def showhelp(self):
         dlg = QtWidgets.QDialog(self)
-        tv = QtWidgets.QTextBrowser(dlg)
+        dlg.setWindowTitle(i18n('Help'))
+        l = QtWidgets.QVBoxLayout(dlg)
+        l.setContentsMargins(6, 6, 6, 6)
+        tabWidget = QtWidgets.QTabWidget(dlg)
+        buttonBar = QtWidgets.QDialogButtonBox(dlg)
+        buttonBar.addButton(QtWidgets.QDialogButtonBox.Close)
+        buttonBar.accepted.connect(dlg.close)
+        buttonBar.rejected.connect(dlg.close)
+        l.addWidget(tabWidget)
+        l.addWidget(buttonBar)
+        tv = QtWidgets.QTextBrowser(tabWidget)
+        image = QtWidgets.QLabel(tabWidget)
+        image.setPixmap(about_pixmap())
+        tabWidget.addTab(image, i18n('About'))
+        tabWidget.addTab(tv, i18n('Help'))
         with open(self._cssfile()) as f:
             tv.document().setDefaultStyleSheet(f.read())
         try:
@@ -230,8 +248,6 @@ class MainWindow(QtWidgets.QMainWindow):
                     tv.document().setHtml(f.read())
             except:
                 tv.setHtml("No help")
-        l = QtWidgets.QHBoxLayout(dlg)
-        l.addWidget(tv)
         dlg.exec_()
 
     def terminalMenu(self):
@@ -323,9 +339,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def openTerm(self):
         if self.termAction.isChecked():
             self.stack.setCurrentIndex(1)
+            self.termAction.setIcon(icon('terminal-out'))
+            self.termAction.setText(i18n('To Editor'))
             self.term.setFocus()
             # self.term.remoteExec(b'\x04')
         else:
+            self.termAction.setIcon(icon('terminal'))
+            self.termAction.setText(i18n('Terminal'))
             self.stack.setCurrentIndex(0)
 
     def progRun(self):
@@ -407,8 +427,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
     splash = QtWidgets.QSplashScreen()
-    splash.setPixmap(QtGui.QPixmap(os.path.join(share(), 'images',
-                                                'splash.png')))
+    splash.setPixmap(about_pixmap())
     splash.show()
 
     def do_app():
