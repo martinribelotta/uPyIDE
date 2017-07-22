@@ -27,7 +27,7 @@ __version__ = '1.0'
 
 
 def i18n(s):
-    return pyqode_i18n.tr(s)
+    return pyqode_i18n.tr(s, lang='zh_TW')
 
 
 def executable_path():
