@@ -105,7 +105,11 @@ _dict = {
         "Serial Port:": "序列埠:",
         "NewFile.py (%d)": "新檔案.py (%d)",
         "Remote Name": "遠端名稱",
-        "Select Serial Port": "選取序列埠"
+        "Select Serial Port": "選取序列埠",
+        "Device files": "裝置的檔案",
+        "Refresh": "重新整理",
+        "Device": "裝置",
+        "Download to Device": "上傳到裝置"
     }
 }
 

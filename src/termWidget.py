@@ -9,6 +9,9 @@ import time
 import pyqode.qt.QtWidgets as QtWidgets
 import pyqode.qt.QtCore as QtCore
 import pyqode.qt.QtGui as QtGui
+from PyQt5.Qt import QApplication
+
+from myDef import i18n
 
 
 def serial_ports():
@@ -62,7 +65,30 @@ class Terminal(QtWidgets.QWidget):
         self._stream.attach(self._vt)
         self._workers.append(self._processText)
         self._stop = threading.Event()
+        
+   
+    def mousePressEvent(self, QMouseEvent):
+        if QMouseEvent.button() == QtCore.Qt.LeftButton:
+            print("Left Button Clicked")
+        elif QMouseEvent.button() == QtCore.Qt.RightButton:
+            #print("Right Button Clicked")
+            self.rightMenu(QMouseEvent.pos())
 
+
+    def rightMenu(self, position):
+        menu = QtWidgets.QMenu()
+        pasteAction = menu.addAction(i18n("Paste"))
+        pasteAction.triggered.connect(self.paste)
+        #if not QtGui.QClipboard.mimeData().hasText():
+        #    pasteAction.setEnable(False)
+        menu.exec_(self.mapToGlobal(position))
+    
+    def paste(self):
+        clipText = QApplication.clipboard().text()
+        if clipText:
+            self._serial.write(clipText.encode())
+
+        
     def resizeEvent(self, event):
         charSize = self.textRect(' ').size()
         lines = int(event.size().height() / charSize.height())
