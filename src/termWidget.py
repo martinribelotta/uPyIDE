@@ -69,7 +69,8 @@ class Terminal(QtWidgets.QWidget):
    
     def mousePressEvent(self, QMouseEvent):
         if QMouseEvent.button() == QtCore.Qt.LeftButton:
-            print("Left Button Clicked")
+            #print("Left Button Clicked")
+            pass
         elif QMouseEvent.button() == QtCore.Qt.RightButton:
             #print("Right Button Clicked")
             self.rightMenu(QMouseEvent.pos())
@@ -79,8 +80,8 @@ class Terminal(QtWidgets.QWidget):
         menu = QtWidgets.QMenu()
         pasteAction = menu.addAction(i18n("Paste"))
         pasteAction.triggered.connect(self.paste)
-        #if not QtGui.QClipboard.mimeData().hasText():
-        #    pasteAction.setEnable(False)
+        if not QApplication.clipboard().mimeData().hasText():
+            pasteAction.setEnabled(False)
         menu.exec_(self.mapToGlobal(position))
     
     def paste(self):
