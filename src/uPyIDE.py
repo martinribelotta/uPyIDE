@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ElementTree
 
 import markdown
 
+from myDef import i18n
 # from docutils.parsers.rst.directives import path
 
 
@@ -25,9 +26,6 @@ me = tendo.singleton.SingleInstance()
 
 __version__ = '1.0'
 
-
-def i18n(s):
-    return pyqode_i18n.tr(s)
 
 
 def executable_path():
@@ -142,7 +140,35 @@ class SnipplerWidget(QtWidgets.QDockWidget):
         for source in glob.glob(snipplet_glob):
             self.loadCodeSnipplet(source)
 
-
+class DeviceFilesWidget(QtWidgets.QDockWidget):
+    def __init__(self, parent):
+        super(DeviceFilesWidget, self).__init__(i18n('Device files'), parent)
+        self.setWindowTitle(i18n("Device files"))
+        widget = QtWidgets.QWidget(self)
+        vlayout = QtWidgets.QVBoxLayout()
+        self.toolbar = QtWidgets.QToolBar(self)
+        self.toolbar.addAction(i18n("Refresh"), self.loadRemoteFiles)
+        self.toolbar.addAction(icon("download"), i18n("Download to Device"), self.downloadFile)
+        self.filesView = QtWidgets.QTreeWidget(self)
+        self.filesView.header().close()
+        self.deviceItem = QtWidgets.QTreeWidgetItem(0)
+        self.deviceItem.setText(0,i18n("Device"))
+        self.filesView.addTopLevelItem(self.deviceItem)
+        vlayout.addWidget(self.toolbar)
+        vlayout.addWidget(self.filesView)
+        widget.setLayout(vlayout)
+        self.setWidget(widget)
+    
+    @QtCore.Slot()
+    def loadRemoteFiles(self):
+        print('TODO: load Remote File list')
+        pass
+    @QtCore.Slot()
+    def downloadFile(self):
+        #print(self.parent().windowTitle())
+        print('TODO: download selected File')
+        pass
+        
 class MainWindow(QtWidgets.QMainWindow):
     onListDir = QtCore.Signal(str)
 
@@ -158,12 +184,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.dock_outline)
         self.snippler = SnipplerWidget(self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.snippler)
+        self.deviceFiles = DeviceFilesWidget(self)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.deviceFiles)
         self.stack = QtWidgets.QStackedWidget(self)
         self.stack.addWidget(self.tabber)
         self.stack.addWidget(self.term)
         self.setCentralWidget(self.stack)
         self.makeAppToolBar()
-        self.resize(800, 600)
+        self.resize(1024, 600)
         self.onListDir.connect(lambda l: self._showDir(l))
         self.tabber.currentChanged.connect(self.actualizeOutline)
         self.fileNew()
@@ -188,7 +216,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.term.close()
 
     def makeAppToolBar(self):
-        bar = QtWidgets.QToolBar(self)
+        bar = QtWidgets.QToolBar('Toolbar', self)
         bar.setIconSize(QtCore.QSize(48, 48))
         bar.addAction(icon("document-new"), i18n("New"), self.fileNew)
         bar.addAction(icon("document-open"), i18n("Open"), self.fileOpen)
@@ -397,6 +425,7 @@ class MainWindow(QtWidgets.QMainWindow):
         d.exec_()
 
     def _writeRemoteFile(self, local_name):
+        '''upload local file to remote device (target board)'''
         def finished(raw):
             print(('_writeRemoteFile terminated: ', raw))
         name = os.path.basename(local_name)
